@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import androidx.room.Delete
 import androidx.room.Update
 import androidx.room.Index
+import androidx.room.Transaction
 
 @Entity(tableName = "number_rules")
 data class NumberRuleEntity(
@@ -60,8 +61,21 @@ interface CallLogDao {
     @Query("SELECT COUNT(*) FROM call_logs WHERE decision = 'BLOCK' AND timestampMillis > :sinceMillis")
     fun observeBlockedCountSince(sinceMillis: Long): Flow<Int>
 
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM call_logs " +
+            "WHERE timestampMillis = :timestampMillis AND number IS :number)",
+    )
+    suspend fun containsEvent(timestampMillis: Long, number: String?): Boolean
+
     @Insert
     suspend fun insert(entry: CallLogEntity)
+
+    @Transaction
+    suspend fun insertIfAbsent(entry: CallLogEntity) {
+        if (!containsEvent(entry.timestampMillis, entry.number)) {
+            insert(entry)
+        }
+    }
 
     @Query("DELETE FROM call_logs")
     suspend fun clear()

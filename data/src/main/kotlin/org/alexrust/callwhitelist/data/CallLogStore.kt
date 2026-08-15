@@ -20,8 +20,8 @@ class CallLogStore(context: Context) {
     fun observeBlockedCountSince(sinceMillis: Long): Flow<Int> =
         dao.observeBlockedCountSince(sinceMillis)
 
-    suspend fun append(entry: CallLogEntry) {
-        dao.insert(entry.toEntity())
+    suspend fun appendIfAbsent(entry: CallLogEntry) {
+        dao.insertIfAbsent(entry.toEntity())
     }
 
     suspend fun clear() {

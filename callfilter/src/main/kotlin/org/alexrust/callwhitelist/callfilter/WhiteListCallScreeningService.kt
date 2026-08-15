@@ -46,6 +46,9 @@ class WhiteListCallScreeningService : CallScreeningService() {
         val rawNumber = callDetails.handle?.schemeSpecificPart
         scope.launch {
             val receivedAt = Clock.System.now()
+            val eventTimestampMillis = callDetails.creationTimeMillis
+                .takeIf { it > 0L }
+                ?: receivedAt.toEpochMilliseconds()
             val result = runCatching {
                 evaluator(
                     snapshot = snapshotStore.read() ?: defaultSnapshot(),
@@ -76,9 +79,9 @@ class WhiteListCallScreeningService : CallScreeningService() {
             // The system response is the deadline-critical operation. Logging follows it.
             respondToCall(callDetails, response)
             runCatching {
-                callLogStore.append(
+                callLogStore.appendIfAbsent(
                     CallLogEntry(
-                        timestampMillis = receivedAt.toEpochMilliseconds(),
+                        timestampMillis = eventTimestampMillis,
                         number = rawNumber,
                         result = result,
                     ),
