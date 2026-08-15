@@ -13,14 +13,11 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import org.alexrust.callwhitelist.R
 import org.alexrust.callwhitelist.model.CallDecision
 import org.alexrust.callwhitelist.model.CallLogEntry
+import org.alexrust.callwhitelist.ui.components.FilteringStatusCard
+import org.alexrust.callwhitelist.ui.components.StatisticCard
 
 @Composable
 fun HomeScreen(
@@ -60,53 +59,37 @@ fun HomeScreen(
             )
         }
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Phone, contentDescription = null)
-                        Text(
-                            text = stringResource(
-                                when {
-                                    !isFilteringActive -> R.string.filtering_inactive
-                                    filteringEnabled -> R.string.filtering_active
-                                    else -> R.string.filtering_disabled
-                                },
-                            ),
-                            modifier = Modifier.padding(start = 10.dp),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                    }
-                    Text(stringResource(R.string.overview_status_description))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            stringResource(R.string.enable_filtering),
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(
-                            checked = filteringEnabled,
-                            enabled = isFilteringActive,
-                            onCheckedChange = onFilteringEnabledChanged,
-                        )
-                    }
-                    if (!isFilteringActive) {
-                        Button(onClick = onOpenPolicies) {
-                            Text(stringResource(R.string.open_call_policies))
-                        }
-                    }
-                }
-            }
+            FilteringStatusCard(
+                isRoleHeld = isFilteringActive,
+                filteringEnabled = filteringEnabled,
+                onFilteringEnabledChanged = onFilteringEnabledChanged,
+                onRoleAction = onOpenPolicies,
+                roleActionLabel = R.string.open_call_policies,
+            )
         }
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                StatCard(stringResource(R.string.processed_calls), entries.size, Modifier.weight(1f))
-                StatCard(stringResource(R.string.allowed_calls), allowed, Modifier.weight(1f))
-                StatCard(stringResource(R.string.blocked_calls), blocked, Modifier.weight(1f))
+                StatisticCard(
+                    label = stringResource(R.string.processed_calls),
+                    value = entries.size,
+                    icon = Icons.Outlined.Phone,
+                    modifier = Modifier.weight(1f),
+                )
+                StatisticCard(
+                    label = stringResource(R.string.allowed_calls),
+                    value = allowed,
+                    icon = Icons.Outlined.CheckCircle,
+                    modifier = Modifier.weight(1f),
+                )
+                StatisticCard(
+                    label = stringResource(R.string.blocked_calls),
+                    value = blocked,
+                    icon = Icons.Outlined.Block,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
         item {
@@ -135,16 +118,6 @@ fun HomeScreen(
             items(entries.take(3)) { entry ->
                 CallLogRow(entry)
             }
-        }
-    }
-}
-
-@Composable
-private fun StatCard(label: String, value: Int, modifier: Modifier = Modifier) {
-    Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(value.toString(), style = MaterialTheme.typography.headlineSmall)
-            Text(label, style = MaterialTheme.typography.labelMedium)
         }
     }
 }

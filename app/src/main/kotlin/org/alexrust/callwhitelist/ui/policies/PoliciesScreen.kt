@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Contacts
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -56,6 +55,7 @@ import org.alexrust.callwhitelist.model.PolicyCondition
 import org.alexrust.callwhitelist.model.PolicyMatchType
 import org.alexrust.callwhitelist.model.TimeWindow
 import org.alexrust.callwhitelist.system.CallScreeningAccess
+import org.alexrust.callwhitelist.ui.components.FilteringStatusCard
 
 @Composable
 fun PoliciesScreen(
@@ -105,35 +105,13 @@ fun PoliciesScreen(
             Text(stringResource(R.string.policies), style = MaterialTheme.typography.headlineMedium)
         }
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Security, contentDescription = null)
-                        Text(
-                            stringResource(if (isFilteringActive) R.string.filtering_active else R.string.filtering_inactive),
-                            modifier = Modifier.padding(start = 10.dp),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                    }
-                    if (!isFilteringActive) {
-                        Text(stringResource(R.string.call_processing_role_description))
-                        Button(onClick = onActivateFiltering) {
-                            Text(stringResource(R.string.make_call_handler))
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            stringResource(R.string.enable_filtering),
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(
-                            checked = filteringEnabled,
-                            enabled = isFilteringActive,
-                            onCheckedChange = onFilteringEnabledChanged,
-                        )
-                    }
-                }
-            }
+            FilteringStatusCard(
+                isRoleHeld = isFilteringActive,
+                filteringEnabled = filteringEnabled,
+                onFilteringEnabledChanged = onFilteringEnabledChanged,
+                onRoleAction = onActivateFiltering,
+                roleActionLabel = R.string.make_call_handler,
+            )
         }
         item {
             ProfilePolicyCard(
