@@ -8,6 +8,8 @@
     <string name="app_settings">App</string>
     <string name="filtering_active">Filtering is active</string>
     <string name="filtering_inactive">Filtering is inactive</string>
+    <string name="filtering_disabled">Filtering is disabled</string>
+    <string name="enable_filtering">Call filtering</string>
     <string name="allowed_numbers_count">Allowed numbers: %1$d</string>
     <string name="setup_filtering">Set up filtering</string>
     <string name="overview_status_description">This area shows real service decisions and journal statistics.</string>

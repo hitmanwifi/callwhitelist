@@ -20,6 +20,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +34,8 @@ import org.alexrust.callwhitelist.model.CallLogEntry
 fun HomeScreen(
     modifier: Modifier = Modifier,
     isFilteringActive: Boolean,
+    filteringEnabled: Boolean,
+    onFilteringEnabledChanged: (Boolean) -> Unit,
     entries: List<CallLogEntry>,
     overviewPeriodLabel: String,
     onOpenPolicies: () -> Unit,
@@ -66,13 +69,28 @@ fun HomeScreen(
                         Icon(Icons.Outlined.Phone, contentDescription = null)
                         Text(
                             text = stringResource(
-                                if (isFilteringActive) R.string.filtering_active else R.string.filtering_inactive,
+                                when {
+                                    !isFilteringActive -> R.string.filtering_inactive
+                                    filteringEnabled -> R.string.filtering_active
+                                    else -> R.string.filtering_disabled
+                                },
                             ),
                             modifier = Modifier.padding(start = 10.dp),
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
                     Text(stringResource(R.string.overview_status_description))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.enable_filtering),
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = filteringEnabled,
+                            enabled = isFilteringActive,
+                            onCheckedChange = onFilteringEnabledChanged,
+                        )
+                    }
                     if (!isFilteringActive) {
                         Button(onClick = onOpenPolicies) {
                             Text(stringResource(R.string.open_call_policies))

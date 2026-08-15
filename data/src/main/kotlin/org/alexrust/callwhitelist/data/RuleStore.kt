@@ -72,6 +72,7 @@ class RoomRuleStore(context: Context) : RuleStore {
 
     private suspend fun publishSnapshot() {
         val contactsAreAllowed = userPreferences.contactsAllowed.first()
+        val filteringIsEnabled = userPreferences.filteringEnabled.first()
         val existingSnapshot = snapshotStore.read()
         val existingProfile = existingSnapshot?.profiles
             ?.firstOrNull { it.id == DEFAULT_PROFILE_ID }
@@ -117,6 +118,7 @@ class RoomRuleStore(context: Context) : RuleStore {
                 profiles = profiles,
                 contactsAllowed = contactsAreAllowed,
                 emergencyNumbersAlwaysAllowed = existingSnapshot?.emergencyNumbersAlwaysAllowed ?: true,
+                filteringEnabled = filteringIsEnabled,
             ),
         )
     }

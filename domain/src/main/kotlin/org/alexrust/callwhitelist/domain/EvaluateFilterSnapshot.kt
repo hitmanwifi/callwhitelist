@@ -19,6 +19,14 @@ class EvaluateFilterSnapshot(
         now: LocalDateTime,
         isEmergency: Boolean = false,
     ): FilterResult {
+        if (!snapshot.filteringEnabled) {
+            return FilterResult(
+                decision = CallDecision.ALLOW,
+                source = MatchSource.DEFAULT,
+                reason = "Filtering disabled",
+            )
+        }
+
         if (isEmergency && snapshot.emergencyNumbersAlwaysAllowed) {
             return FilterResult(
                 decision = CallDecision.ALLOW,

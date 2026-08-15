@@ -61,10 +61,12 @@ import org.alexrust.callwhitelist.system.CallScreeningAccess
 fun PoliciesScreen(
     modifier: Modifier = Modifier,
     isFilteringActive: Boolean,
+    filteringEnabled: Boolean,
     rules: List<NumberRule>,
     contactsAllowed: Boolean,
     profile: FilterProfile?,
     onActivateFiltering: () -> Unit,
+    onFilteringEnabledChanged: (Boolean) -> Unit,
     onContactsChanged: (Boolean) -> Unit,
     onProfileChanged: (FilterProfile) -> Unit,
     onAddRule: (NumberRule) -> Unit,
@@ -113,11 +115,22 @@ fun PoliciesScreen(
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
-                    Text(stringResource(R.string.call_processing_role_description))
                     if (!isFilteringActive) {
+                        Text(stringResource(R.string.call_processing_role_description))
                         Button(onClick = onActivateFiltering) {
                             Text(stringResource(R.string.make_call_handler))
                         }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.enable_filtering),
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = filteringEnabled,
+                            enabled = isFilteringActive,
+                            onCheckedChange = onFilteringEnabledChanged,
+                        )
                     }
                 }
             }

@@ -65,6 +65,7 @@ data class FilterSnapshot(
     val profiles: List<FilterProfile>,
     val contactsAllowed: Boolean = true,
     val emergencyNumbersAlwaysAllowed: Boolean = true,
+    val filteringEnabled: Boolean = true,
 )
 
 data class FilterSettings(

@@ -61,6 +61,8 @@ fun AppNavigation(
         .collectAsStateWithLifecycleCompat(OverviewPeriod.TODAY.storageValue)
     val notificationsEnabled by userPreferences.notificationsEnabled
         .collectAsStateWithLifecycleCompat(false)
+    val filteringEnabled by userPreferences.filteringEnabled
+        .collectAsStateWithLifecycleCompat(true)
     val overviewPeriod = OverviewPeriod.fromStorage(overviewPeriodStorage)
     val overviewStartMillis = OverviewPeriodStart()(overviewPeriod)
     val overviewEntries = remember(entries, overviewStartMillis) {
@@ -121,6 +123,10 @@ fun AppNavigation(
             0 -> HomeScreen(
                 modifier = Modifier.padding(paddingValues),
                 isFilteringActive = isFilteringActive,
+                filteringEnabled = filteringEnabled,
+                onFilteringEnabledChanged = { value ->
+                    scope.launch { policyStore.setFilteringEnabled(value) }
+                },
                 entries = overviewEntries,
                 overviewPeriodLabel = stringResource(periodLabel(overviewPeriod)),
                 onOpenPolicies = { selectedTab = 1 },
@@ -130,10 +136,14 @@ fun AppNavigation(
             1 -> PoliciesScreen(
                 modifier = Modifier.padding(paddingValues),
                 isFilteringActive = isFilteringActive,
+                filteringEnabled = filteringEnabled,
                 rules = rules,
                 contactsAllowed = contactsAllowed,
                 profile = snapshot.profiles.firstOrNull { it.id == 1L },
                 onActivateFiltering = onActivateFiltering,
+                onFilteringEnabledChanged = { value ->
+                    scope.launch { policyStore.setFilteringEnabled(value) }
+                },
                 onContactsChanged = { value -> scope.launch { ruleStore.setContactsAllowed(value) } },
                 onProfileChanged = { profile -> scope.launch { policyStore.updateProfile(profile) } },
                 onAddRule = { rule -> scope.launch { ruleStore.add(rule) } },

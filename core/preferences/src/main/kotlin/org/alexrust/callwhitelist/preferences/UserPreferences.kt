@@ -17,6 +17,7 @@ class UserPreferences(private val context: Context) {
     private val lastJournalViewedAtMillisKey = longPreferencesKey("last_journal_viewed_at_millis")
     private val overviewPeriodKey = stringPreferencesKey("overview_period")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
+    private val filteringEnabledKey = booleanPreferencesKey("filtering_enabled")
 
     val contactsAllowed: Flow<Boolean> = context.userPreferencesDataStore.data.map {
         it[contactsAllowedKey] ?: true
@@ -36,6 +37,10 @@ class UserPreferences(private val context: Context) {
 
     val notificationsEnabled: Flow<Boolean> = context.userPreferencesDataStore.data.map {
         it[notificationsEnabledKey] ?: false
+    }
+
+    val filteringEnabled: Flow<Boolean> = context.userPreferencesDataStore.data.map {
+        it[filteringEnabledKey] ?: true
     }
 
     suspend fun setContactsAllowed(value: Boolean) {
@@ -58,6 +63,10 @@ class UserPreferences(private val context: Context) {
 
     suspend fun setNotificationsEnabled(value: Boolean) {
         context.userPreferencesDataStore.edit { it[notificationsEnabledKey] = value }
+    }
+
+    suspend fun setFilteringEnabled(value: Boolean) {
+        context.userPreferencesDataStore.edit { it[filteringEnabledKey] = value }
     }
 }
 

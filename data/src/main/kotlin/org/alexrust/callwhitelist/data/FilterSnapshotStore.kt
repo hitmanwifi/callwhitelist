@@ -37,6 +37,7 @@ private fun FilterSnapshot.toJson(): JSONObject = JSONObject().apply {
     put("version", version)
     put("contactsAllowed", contactsAllowed)
     put("emergencyNumbersAlwaysAllowed", emergencyNumbersAlwaysAllowed)
+    put("filteringEnabled", filteringEnabled)
     put("profiles", JSONArray(profiles.map { it.toJson() }))
 }
 
@@ -72,6 +73,7 @@ private fun JSONObject.toSnapshot(): FilterSnapshot = FilterSnapshot(
     version = getLong("version"),
     contactsAllowed = optBoolean("contactsAllowed", true),
     emergencyNumbersAlwaysAllowed = optBoolean("emergencyNumbersAlwaysAllowed", true),
+    filteringEnabled = optBoolean("filteringEnabled", true),
     profiles = getJSONArray("profiles").toList { it.toProfile() },
 )
 

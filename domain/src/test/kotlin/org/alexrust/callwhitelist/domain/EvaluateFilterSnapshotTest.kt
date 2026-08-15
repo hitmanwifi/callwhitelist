@@ -70,4 +70,21 @@ class EvaluateFilterSnapshotTest {
         assertEquals(CallDecision.ALLOW, result.decision)
         assertEquals(MatchSource.EMERGENCY, result.source)
     }
+
+    @Test
+    fun disabledFilteringAllowsAnyCall() {
+        val result = EvaluateFilterSnapshot()(
+            snapshot = FilterSnapshot(
+                version = 1,
+                filteringEnabled = false,
+                profiles = listOf(FilterProfile(name = "Default", defaultDecision = CallDecision.BLOCK)),
+            ),
+            rawNumber = "+79991234567",
+            isContact = false,
+            now = now,
+        )
+
+        assertEquals(CallDecision.ALLOW, result.decision)
+        assertEquals(MatchSource.DEFAULT, result.source)
+    }
 }

@@ -8,6 +8,8 @@
     <string name="app_settings">Приложение</string>
     <string name="filtering_active">Фильтрация активна</string>
     <string name="filtering_inactive">Фильтрация не активна</string>
+    <string name="filtering_disabled">Фильтрация отключена</string>
+    <string name="enable_filtering">Фильтрация вызовов</string>
     <string name="allowed_numbers_count">Разрешённых номеров: %1$d</string>
     <string name="setup_filtering">Настроить фильтрацию</string>
     <string name="overview_status_description">Здесь отображаются реальные решения сервиса и статистика журнала.</string>
