@@ -21,6 +21,8 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +48,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.alexrust.callwhitelist.R
 import org.alexrust.callwhitelist.model.CallDecision
 import org.alexrust.callwhitelist.model.FilterPolicyRule
@@ -192,8 +200,15 @@ fun PoliciesScreen(
     if (showAddDialog) {
         AddNumberDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { number, label ->
-                onAddRule(NumberRule(number = number, label = label, decision = CallDecision.ALLOW))
+            onConfirm = { number, label, expiresAtMillis ->
+                onAddRule(
+                    NumberRule(
+                        number = number,
+                        label = label,
+                        decision = CallDecision.ALLOW,
+                        expiresAtMillis = expiresAtMillis,
+                    ),
+                )
                 showAddDialog = false
             },
         )
@@ -378,10 +393,29 @@ private fun FilterProfile.withDecision(type: PolicyMatchType, decision: CallDeci
 
 @Composable
 private fun NumberRuleRow(rule: NumberRule, onToggle: (Boolean) -> Unit, onDelete: () -> Unit) {
+    val expiration = rule.expiresAtMillis
     Card(modifier = Modifier.fillMaxWidth()) {
         ListItem(
             headlineContent = { Text(rule.label.ifBlank { rule.number }) },
-            supportingContent = { Text(rule.number) },
+            supportingContent = {
+                Column {
+                    Text(rule.number)
+                    expiration?.let { expiresAtMillis ->
+                        Text(
+                            stringResource(
+                                if (expiresAtMillis <= Clock.System.now().toEpochMilliseconds()) {
+                                    R.string.rule_expired
+                                } else {
+                                    R.string.rule_expires_format
+                                },
+                                formatExpiration(expiresAtMillis),
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            },
             trailingContent = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Switch(checked = rule.enabled, onCheckedChange = onToggle)
@@ -395,9 +429,11 @@ private fun NumberRuleRow(rule: NumberRule, onToggle: (Boolean) -> Unit, onDelet
 }
 
 @Composable
-private fun AddNumberDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
+private fun AddNumberDialog(onDismiss: () -> Unit, onConfirm: (String, String, Long?) -> Unit) {
     var number by remember { mutableStateOf("") }
     var label by remember { mutableStateOf("") }
+    var duration by remember { mutableStateOf(TemporaryDuration.PERMANENT) }
+    var durationExpanded by remember { mutableStateOf(false) }
     val canSave = number.trim().isNotEmpty()
 
     AlertDialog(
@@ -417,15 +453,66 @@ private fun AddNumberDialog(onDismiss: () -> Unit, onConfirm: (String, String) -
                     label = { Text(stringResource(R.string.rule_label)) },
                     singleLine = true,
                 )
+                Text(stringResource(R.string.rule_duration))
+                OutlinedButton(onClick = { durationExpanded = true }) {
+                    Text(stringResource(durationLabel(duration)))
+                }
+                DropdownMenu(
+                    expanded = durationExpanded,
+                    onDismissRequest = { durationExpanded = false },
+                ) {
+                    TemporaryDuration.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(durationLabel(option))) },
+                            onClick = {
+                                duration = option
+                                durationExpanded = false
+                            },
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
-            TextButton(enabled = canSave, onClick = { onConfirm(number.trim(), label.trim()) }) {
+            TextButton(
+                enabled = canSave,
+                onClick = {
+                    onConfirm(number.trim(), label.trim(), durationToExpirationMillis(duration))
+                },
+            ) {
                 Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
+    )
+}
+
+private enum class TemporaryDuration { PERMANENT, ONE_HOUR, ONE_DAY, SEVEN_DAYS }
+
+private fun durationLabel(duration: TemporaryDuration): Int = when (duration) {
+    TemporaryDuration.PERMANENT -> R.string.duration_permanent
+    TemporaryDuration.ONE_HOUR -> R.string.duration_one_hour
+    TemporaryDuration.ONE_DAY -> R.string.duration_one_day
+    TemporaryDuration.SEVEN_DAYS -> R.string.duration_seven_days
+}
+
+private fun durationToExpirationMillis(duration: TemporaryDuration): Long? = when (duration) {
+    TemporaryDuration.PERMANENT -> null
+    TemporaryDuration.ONE_HOUR -> (Clock.System.now() + 1.hours).toEpochMilliseconds()
+    TemporaryDuration.ONE_DAY -> (Clock.System.now() + 1.days).toEpochMilliseconds()
+    TemporaryDuration.SEVEN_DAYS -> (Clock.System.now() + 7.days).toEpochMilliseconds()
+}
+
+private fun formatExpiration(epochMillis: Long): String {
+    val local = Instant.fromEpochMilliseconds(epochMillis)
+        .toLocalDateTime(TimeZone.currentSystemDefault())
+    return "%04d-%02d-%02d %02d:%02d".format(
+        local.year,
+        local.month.ordinal + 1,
+        local.day,
+        local.hour,
+        local.minute,
     )
 }

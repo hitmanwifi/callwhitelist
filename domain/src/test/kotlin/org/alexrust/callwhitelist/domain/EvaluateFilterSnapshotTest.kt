@@ -3,6 +3,7 @@ package org.alexrust.callwhitelist.domain
 import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 import org.alexrust.callwhitelist.model.CallDecision
 import org.alexrust.callwhitelist.model.FilterPolicyRule
 import org.alexrust.callwhitelist.model.FilterProfile
@@ -85,6 +86,39 @@ class EvaluateFilterSnapshotTest {
         )
 
         assertEquals(CallDecision.ALLOW, result.decision)
+        assertEquals(MatchSource.DEFAULT, result.source)
+    }
+
+    @Test
+    fun expiredExplicitRuleDoesNotMatch() {
+        val result = EvaluateFilterSnapshot()(
+            snapshot = FilterSnapshot(
+                version = 1,
+                profiles = listOf(
+                    FilterProfile(
+                        name = "Default",
+                        defaultDecision = CallDecision.BLOCK,
+                        rules = listOf(
+                            FilterPolicyRule(
+                                condition = PolicyCondition(
+                                    PolicyMatchType.EXACT_NUMBER,
+                                    "+79991234567",
+                                ),
+                                decision = CallDecision.ALLOW,
+                                expiresAtMillis = Instant.parse("2026-08-15T11:00:00Z")
+                                    .toEpochMilliseconds(),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            rawNumber = "+79991234567",
+            isContact = false,
+            now = now,
+            nowMillis = Instant.parse("2026-08-15T12:00:00Z").toEpochMilliseconds(),
+        )
+
+        assertEquals(CallDecision.BLOCK, result.decision)
         assertEquals(MatchSource.DEFAULT, result.source)
     }
 }

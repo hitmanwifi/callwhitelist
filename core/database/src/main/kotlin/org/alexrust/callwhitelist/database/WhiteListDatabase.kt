@@ -12,6 +12,8 @@ import androidx.room.Delete
 import androidx.room.Update
 import androidx.room.Index
 import androidx.room.Transaction
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Entity(tableName = "number_rules")
 data class NumberRuleEntity(
@@ -20,6 +22,7 @@ data class NumberRuleEntity(
     val label: String,
     val enabled: Boolean,
     val decision: String,
+    val expiresAtMillis: Long?,
 )
 
 @Entity(
@@ -81,7 +84,7 @@ interface CallLogDao {
     suspend fun clear()
 }
 
-@Database(entities = [NumberRuleEntity::class, CallLogEntity::class], version = 2, exportSchema = false)
+@Database(entities = [NumberRuleEntity::class, CallLogEntity::class], version = 3, exportSchema = false)
 abstract class WhiteListDatabase : RoomDatabase() {
     abstract fun numberRuleDao(): NumberRuleDao
     abstract fun callLogDao(): CallLogDao
@@ -97,7 +100,15 @@ object WhiteListDatabaseProvider {
                 context.applicationContext,
                 WhiteListDatabase::class.java,
                 "call_whitelist.db",
-            ).fallbackToDestructiveMigration(dropAllTables = true).build().also { instance = it }
+            ).addMigrations(MIGRATION_2_3)
+                .fallbackToDestructiveMigration(dropAllTables = true)
+                .build().also { instance = it }
         }
+    }
+}
+
+private val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE number_rules ADD COLUMN expiresAtMillis INTEGER")
     }
 }

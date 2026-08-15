@@ -60,6 +60,7 @@ private fun FilterPolicyRule.toJson(): JSONObject = JSONObject().apply {
     put("decision", decision.name)
     put("priority", priority)
     putNullable("timeWindow", timeWindow?.toJson())
+    putNullable("expiresAtMillis", expiresAtMillis)
 }
 
 private fun TimeWindow.toJson(): JSONObject = JSONObject().apply {
@@ -98,6 +99,7 @@ private fun JSONObject.toRule(): FilterPolicyRule = FilterPolicyRule(
     decision = getDecision("decision"),
     priority = getInt("priority"),
     timeWindow = optJSONObject("timeWindow")?.toTimeWindow(),
+    expiresAtMillis = if (isNull("expiresAtMillis")) null else optLong("expiresAtMillis"),
 )
 
 private fun JSONObject.toTimeWindow(): TimeWindow = TimeWindow(

@@ -18,6 +18,7 @@ class EvaluateFilterSnapshot(
         isContact: Boolean,
         now: LocalDateTime,
         isEmergency: Boolean = false,
+        nowMillis: Long? = null,
     ): FilterResult {
         if (!snapshot.filteringEnabled) {
             return FilterResult(
@@ -58,6 +59,10 @@ class EvaluateFilterSnapshot(
             ?.filter {
                 val timeWindow = it.timeWindow
                 timeWindow == null || isTimeWindowActive(timeWindow, now)
+            }
+            ?.filter {
+                val expiresAtMillis = it.expiresAtMillis
+                expiresAtMillis == null || nowMillis == null || nowMillis < expiresAtMillis
             }
             ?.filter { matches(it, matchType, number) }
             ?.maxWithOrNull(

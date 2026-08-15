@@ -38,6 +38,7 @@ data class NumberRule(
     val label: String = "",
     val enabled: Boolean = true,
     val decision: CallDecision = CallDecision.ALLOW,
+    val expiresAtMillis: Long? = null,
 )
 
 data class FilterPolicyRule(
@@ -48,6 +49,7 @@ data class FilterPolicyRule(
     val decision: CallDecision = CallDecision.ALLOW,
     val priority: Int = 0,
     val timeWindow: TimeWindow? = null,
+    val expiresAtMillis: Long? = null,
 )
 
 data class FilterProfile(

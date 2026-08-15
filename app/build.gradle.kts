@@ -33,5 +33,6 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.kotlinx.datetime)
     implementation(project(":core:preferences"))
 }

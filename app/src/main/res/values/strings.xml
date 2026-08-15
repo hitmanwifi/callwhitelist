@@ -34,6 +34,13 @@
     <string name="contacts_permission_required">Нужно разрешение на контакты, чтобы включить это правило.</string>
     <string name="phone_number">Номер телефона</string>
     <string name="rule_label">Название (необязательно)</string>
+    <string name="rule_duration">Срок действия</string>
+    <string name="duration_permanent">Постоянно</string>
+    <string name="duration_one_hour">1 час</string>
+    <string name="duration_one_day">24 часа</string>
+    <string name="duration_seven_days">7 дней</string>
+    <string name="rule_expires_format">Действует до: %1$s</string>
+    <string name="rule_expired">Срок действия истёк: %1$s</string>
     <string name="save">Сохранить</string>
     <string name="cancel">Отмена</string>
     <string name="clear_journal">Очистить журнал</string>

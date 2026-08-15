@@ -76,9 +76,14 @@ class RoomRuleStore(context: Context) : RuleStore {
         val existingSnapshot = snapshotStore.read()
         val existingProfile = existingSnapshot?.profiles
             ?.firstOrNull { it.id == DEFAULT_PROFILE_ID }
+        val nowMillis = Clock.System.now().toEpochMilliseconds()
         val numberRules = dao.getAll()
             .filter { it.enabled }
             .map { it.toModel() }
+            .filter {
+                val expiresAtMillis = it.expiresAtMillis
+                expiresAtMillis == null || expiresAtMillis > nowMillis
+            }
         val generatedRules = buildList {
             if (contactsAreAllowed) {
                 add(
@@ -99,6 +104,7 @@ class RoomRuleStore(context: Context) : RuleStore {
                         label = rule.label,
                         decision = rule.decision,
                         priority = EXPLICIT_NUMBER_PRIORITY,
+                        expiresAtMillis = rule.expiresAtMillis,
                     ),
                 )
             }
@@ -138,6 +144,7 @@ private fun NumberRuleEntity.toModel(): NumberRule = NumberRule(
     enabled = enabled,
     decision = runCatching { CallDecision.valueOf(decision) }
         .getOrDefault(CallDecision.ALLOW),
+    expiresAtMillis = expiresAtMillis,
 )
 
 private fun NumberRule.toEntity(): NumberRuleEntity = NumberRuleEntity(
@@ -146,4 +153,5 @@ private fun NumberRule.toEntity(): NumberRuleEntity = NumberRuleEntity(
     label = label,
     enabled = enabled,
     decision = decision.name,
+    expiresAtMillis = expiresAtMillis,
 )

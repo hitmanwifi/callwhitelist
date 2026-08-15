@@ -34,6 +34,13 @@
     <string name="contacts_permission_required">Contacts permission is required to enable this rule.</string>
     <string name="phone_number">Phone number</string>
     <string name="rule_label">Label (optional)</string>
+    <string name="rule_duration">Duration</string>
+    <string name="duration_permanent">Permanent</string>
+    <string name="duration_one_hour">1 hour</string>
+    <string name="duration_one_day">24 hours</string>
+    <string name="duration_seven_days">7 days</string>
+    <string name="rule_expires_format">Active until: %1$s</string>
+    <string name="rule_expired">Expired: %1$s</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="clear_journal">Clear journal</string>

@@ -56,6 +56,7 @@ class WhiteListCallScreeningService : CallScreeningService() {
                     isContact = contactMatcher.matches(rawNumber),
                     now = receivedAt.toLocalDateTime(TimeZone.currentSystemDefault()),
                     isEmergency = isEmergencyNumber(rawNumber),
+                    nowMillis = receivedAt.toEpochMilliseconds(),
                 )
             }.getOrElse {
                 FilterResult(
