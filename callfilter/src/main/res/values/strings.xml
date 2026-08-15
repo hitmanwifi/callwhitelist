@@ -1,0 +1,6 @@
+<resources>
+    <string name="blocked_call_notification_channel">Заблокированные вызовы</string>
+    <string name="blocked_call_notification_title">Вызов заблокирован</string>
+    <string name="blocked_call_notification_text">Заблокирован вызов от %1$s</string>
+    <string name="blocked_call_notification_hidden_number">скрытого номера</string>
+</resources>
