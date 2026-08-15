@@ -58,6 +58,12 @@
     <string name="settings_description">Change the app language and call filtering options here.</string>
     <string name="app_settings_description">Interface and app settings. Call-processing rules are managed in Policies.</string>
     <string name="app_version">Version 0.2.0</string>
+    <string name="legal_information">License and copyright</string>
+    <string name="copyright_holder">Copyright</string>
+    <string name="copyright_holder_value">© 2026 AlexRust</string>
+    <string name="project_license">Project license</string>
+    <string name="project_license_value">BSD-2-Clause</string>
+    <string name="license_notice">When redistributing the source or app, retain the copyright notice, license conditions, and disclaimer.</string>
     <string name="overview_period">Overview statistics period</string>
     <string name="overview_period_format">Period: %1$s</string>
     <string name="period_today">Today</string>

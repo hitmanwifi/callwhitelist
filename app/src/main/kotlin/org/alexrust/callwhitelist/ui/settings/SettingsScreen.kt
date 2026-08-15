@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Copyright
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenu
@@ -30,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -146,6 +151,55 @@ fun SettingsScreen(
             }
         }
         Text(stringResource(R.string.app_version), style = MaterialTheme.typography.bodySmall)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    stringResource(R.string.legal_information),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                LegalInfoRow(
+                    icon = Icons.Outlined.Copyright,
+                    title = stringResource(R.string.copyright_holder),
+                    value = stringResource(R.string.copyright_holder_value),
+                )
+                LegalInfoRow(
+                    icon = Icons.Outlined.Description,
+                    title = stringResource(R.string.project_license),
+                    value = stringResource(R.string.project_license_value),
+                )
+                Text(
+                    stringResource(R.string.license_notice),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegalInfoRow(
+    icon: ImageVector,
+    title: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null)
+        Column(modifier = Modifier.padding(start = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.labelMedium)
+            Text(value, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 

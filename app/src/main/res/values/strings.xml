@@ -58,6 +58,12 @@
     <string name="settings_description">Здесь можно изменить язык приложения и параметры фильтрации вызовов.</string>
     <string name="app_settings_description">Настройки интерфейса и самого приложения. Правила обработки вызовов находятся в разделе «Политики».</string>
     <string name="app_version">Версия 0.2.0</string>
+    <string name="legal_information">Лицензия и авторские права</string>
+    <string name="copyright_holder">Авторские права</string>
+    <string name="copyright_holder_value">© 2026 AlexRust</string>
+    <string name="project_license">Лицензия проекта</string>
+    <string name="project_license_value">BSD-2-Clause</string>
+    <string name="license_notice">При распространении исходников или приложения сохраняйте уведомление об авторских правах, условия лицензии и отказ от гарантий.</string>
     <string name="overview_period">Период статистики обзора</string>
     <string name="overview_period_format">Период: %1$s</string>
     <string name="period_today">Сегодня</string>
