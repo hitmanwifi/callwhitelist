@@ -80,4 +80,7 @@ The current development baseline includes filtering, schedules, local journal, n
 
 ## License
 
-An open-source license will be selected and added before the first public release.
+The project source code is available under the [BSD-2-Clause License](LICENSE).
+When redistributing source or binary builds, retain the copyright notice,
+license conditions, and disclaimer. Third-party dependencies remain under
+their own licenses.
