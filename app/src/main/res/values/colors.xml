@@ -1,5 +1,5 @@
 <resources>
     <color name="ic_launcher_background">#FFFFFFFF</color>
-    <color name="ic_launcher_foreground">#1B5E20</color>
-    <color name="ic_launcher_blocked">#B3261E</color>
+    <color name="ic_launcher_foreground">#263746</color>
+    <color name="ic_launcher_cutout">#FFFFFFFF</color>
 </resources>

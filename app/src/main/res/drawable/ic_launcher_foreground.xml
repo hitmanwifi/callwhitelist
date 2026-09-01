@@ -5,20 +5,24 @@
     android:viewportHeight="108">
     <path
         android:fillColor="@color/ic_launcher_foreground"
-        android:fillType="evenOdd"
-        android:pathData="M54,20a34,34 0,1 1,0 68a34,34 0,1 1,0 -68zM54,25a29,29 0,1 0,0 58a29,29 0,1 0,0 -58z" />
+        android:pathData="M54,18a36,36 0,1 1,0 72a36,36 0,1 1,0 -72z" />
 
     <group
-        android:scaleX="1.75"
-        android:scaleY="1.75"
-        android:translateX="33"
-        android:translateY="33">
+        android:scaleX="1.65"
+        android:scaleY="1.65"
+        android:translateX="34.2"
+        android:translateY="34.2">
         <path
-            android:fillColor="@color/ic_launcher_foreground"
-            android:pathData="M6.62,10.79c1.44,2.83 3.76,5.14 6.59,6.59l2.2,-2.2c0.27,-0.27 0.67,-0.36 1.02,-0.24 1.12,0.37 2.33,0.57 3.57,0.57 0.55,0 1,0.45 1,1V20c0,0.55 -0.45,1 -1,1C10.61,21 3,13.39 3,4c0,-0.55 0.45,-1 1,-1h3.5c0.55,0 1,0.45 1,1 0,1.25 0.2,2.45 0.57,3.57 0.11,0.35 0.03,0.74 -0.25,1.02l-2.2,2.2z" />
+            android:fillColor="@color/ic_launcher_cutout"
+            android:pathData="M7.1,2.8C6.5,2.8 5.9,3 5.4,3.5L3.2,5.7C2.8,6.1 2.7,6.7 3,7.3C5.7,13.1 10.9,18.3 16.7,21C17.3,21.3 17.9,21.2 18.3,20.8L20.5,18.6C21,18.1 21.2,17.5 21.1,16.9C21,16.4 20.7,16 20.2,15.8L16.6,14.1C15.9,13.8 15.1,14 14.6,14.5L13.4,15.7C11.3,14.4 9.6,12.7 8.3,10.6L9.5,9.4C10,8.9 10.2,8.1 9.9,7.4L8.2,3.8C8,3.3 7.6,2.9 7.1,2.8z" />
     </group>
 
-    <path
-        android:fillColor="@color/ic_launcher_blocked"
-        android:pathData="M30,30L35.5,24.5L78,67L72.5,72.5Z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:rotation="45">
+        <path
+            android:fillColor="@color/ic_launcher_cutout"
+            android:pathData="M22,50h64c2.21,0 4,1.79 4,4s-1.79,4 -4,4H22c-2.21,0 -4,-1.79 -4,-4s1.79,-4 4,-4z" />
+    </group>
 </vector>
