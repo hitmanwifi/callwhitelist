@@ -8,10 +8,10 @@
         android:pathData="M54,18a36,36 0,1 1,0 72a36,36 0,1 1,0 -72z" />
 
     <group
-        android:scaleX="1.65"
-        android:scaleY="1.65"
-        android:translateX="34.2"
-        android:translateY="34.2">
+        android:scaleX="1.85"
+        android:scaleY="1.85"
+        android:translateX="31.9"
+        android:translateY="31.9">
         <path
             android:fillColor="@color/ic_launcher_cutout"
             android:pathData="M7.1,2.8C6.5,2.8 5.9,3 5.4,3.5L3.2,5.7C2.8,6.1 2.7,6.7 3,7.3C5.7,13.1 10.9,18.3 16.7,21C17.3,21.3 17.9,21.2 18.3,20.8L20.5,18.6C21,18.1 21.2,17.5 21.1,16.9C21,16.4 20.7,16 20.2,15.8L16.6,14.1C15.9,13.8 15.1,14 14.6,14.5L13.4,15.7C11.3,14.4 9.6,12.7 8.3,10.6L9.5,9.4C10,8.9 10.2,8.1 9.9,7.4L8.2,3.8C8,3.3 7.6,2.9 7.1,2.8z" />
