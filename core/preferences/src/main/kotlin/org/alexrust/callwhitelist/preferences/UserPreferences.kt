@@ -18,6 +18,7 @@ class UserPreferences(private val context: Context) {
     private val overviewPeriodKey = stringPreferencesKey("overview_period")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
     private val filteringEnabledKey = booleanPreferencesKey("filtering_enabled")
+    private val themeModeKey = stringPreferencesKey("theme_mode")
 
     val contactsAllowed: Flow<Boolean> = context.userPreferencesDataStore.data.map {
         it[contactsAllowedKey] ?: true
@@ -41,6 +42,10 @@ class UserPreferences(private val context: Context) {
 
     val filteringEnabled: Flow<Boolean> = context.userPreferencesDataStore.data.map {
         it[filteringEnabledKey] ?: true
+    }
+
+    val themeMode: Flow<String> = context.userPreferencesDataStore.data.map {
+        it[themeModeKey] ?: DEFAULT_THEME_MODE
     }
 
     suspend fun setContactsAllowed(value: Boolean) {
@@ -68,6 +73,11 @@ class UserPreferences(private val context: Context) {
     suspend fun setFilteringEnabled(value: Boolean) {
         context.userPreferencesDataStore.edit { it[filteringEnabledKey] = value }
     }
+
+    suspend fun setThemeMode(value: String) {
+        context.userPreferencesDataStore.edit { it[themeModeKey] = value }
+    }
 }
 
 private const val DEFAULT_OVERVIEW_PERIOD = "today"
+private const val DEFAULT_THEME_MODE = "system"

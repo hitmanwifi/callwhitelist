@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Copyright
 import androidx.compose.material.icons.outlined.Description
@@ -42,13 +44,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import org.alexrust.callwhitelist.R
 import org.alexrust.callwhitelist.model.OverviewPeriod
+import org.alexrust.callwhitelist.model.ThemeMode
 import org.alexrust.callwhitelist.system.NotificationAccess
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     overviewPeriod: OverviewPeriod,
+    themeMode: ThemeMode,
     onOverviewPeriodChanged: (OverviewPeriod) -> Unit,
+    onThemeModeChanged: (ThemeMode) -> Unit,
     notificationsEnabled: Boolean,
     onNotificationsEnabledChanged: (Boolean) -> Unit,
 ) {
@@ -72,9 +77,13 @@ fun SettingsScreen(
     }
     var languageExpanded by remember { mutableStateOf(false) }
     var periodExpanded by remember { mutableStateOf(false) }
+    var themeExpanded by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(R.string.app_settings), style = MaterialTheme.typography.headlineMedium)
@@ -104,6 +113,21 @@ fun SettingsScreen(
                     onClick = {
                         onOverviewPeriodChanged(period)
                         periodExpanded = false
+                    },
+                )
+            }
+        }
+        Text(stringResource(R.string.theme))
+        OutlinedButton(onClick = { themeExpanded = true }) {
+            Text(stringResource(themeLabel(themeMode)))
+        }
+        DropdownMenu(expanded = themeExpanded, onDismissRequest = { themeExpanded = false }) {
+            ThemeMode.entries.forEach { mode ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(themeLabel(mode))) },
+                    onClick = {
+                        onThemeModeChanged(mode)
+                        themeExpanded = false
                     },
                 )
             }
@@ -208,6 +232,12 @@ private fun periodLabel(period: OverviewPeriod): Int = when (period) {
     OverviewPeriod.LAST_7_DAYS -> R.string.period_last_7_days
     OverviewPeriod.LAST_30_DAYS -> R.string.period_last_30_days
     OverviewPeriod.ALL -> R.string.period_all_time
+}
+
+private fun themeLabel(themeMode: ThemeMode): Int = when (themeMode) {
+    ThemeMode.SYSTEM -> R.string.theme_system
+    ThemeMode.LIGHT -> R.string.theme_light
+    ThemeMode.DARK -> R.string.theme_dark
 }
 
 private fun setLocale(languageTag: String) {

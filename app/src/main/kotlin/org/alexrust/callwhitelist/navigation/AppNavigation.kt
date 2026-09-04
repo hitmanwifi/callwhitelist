@@ -35,6 +35,7 @@ import org.alexrust.callwhitelist.preferences.UserPreferences
 import org.alexrust.callwhitelist.model.CallDecision
 import org.alexrust.callwhitelist.model.NumberRule
 import org.alexrust.callwhitelist.model.OverviewPeriod
+import org.alexrust.callwhitelist.model.ThemeMode
 import org.alexrust.callwhitelist.domain.OverviewPeriodStart
 import org.alexrust.callwhitelist.ui.home.HomeScreen
 import org.alexrust.callwhitelist.ui.journal.JournalScreen
@@ -63,10 +64,19 @@ fun AppNavigation(
         .collectAsStateWithLifecycleCompat(false)
     val filteringEnabled by userPreferences.filteringEnabled
         .collectAsStateWithLifecycleCompat(true)
+    val themeModeStorage by userPreferences.themeMode
+        .collectAsStateWithLifecycleCompat(ThemeMode.SYSTEM.storageValue)
     val overviewPeriod = OverviewPeriod.fromStorage(overviewPeriodStorage)
     val overviewStartMillis = OverviewPeriodStart()(overviewPeriod)
     val overviewEntries = remember(entries, overviewStartMillis) {
         entries.filter { it.timestampMillis >= overviewStartMillis }
+    }
+    val recentNumbers = remember(entries) {
+        entries.asSequence()
+            .mapNotNull { it.number?.takeIf(String::isNotBlank) }
+            .distinct()
+            .take(10)
+            .toList()
     }
     val unreadBlockedCount by remember(lastJournalViewedAtMillis) {
         callLogStore.observeBlockedCountSince(lastJournalViewedAtMillis)
@@ -138,6 +148,7 @@ fun AppNavigation(
                 isFilteringActive = isFilteringActive,
                 filteringEnabled = filteringEnabled,
                 rules = rules,
+                recentNumbers = recentNumbers,
                 contactsAllowed = contactsAllowed,
                 profile = snapshot.profiles.firstOrNull { it.id == 1L },
                 onActivateFiltering = onActivateFiltering,
@@ -160,7 +171,11 @@ fun AppNavigation(
             else -> SettingsScreen(
                 modifier = Modifier.padding(paddingValues),
                 overviewPeriod = overviewPeriod,
+                themeMode = ThemeMode.fromStorage(themeModeStorage),
                 notificationsEnabled = notificationsEnabled,
+                onThemeModeChanged = { mode ->
+                    scope.launch { userPreferences.setThemeMode(mode.storageValue) }
+                },
                 onNotificationsEnabledChanged = { value ->
                     scope.launch { userPreferences.setNotificationsEnabled(value) }
                 },

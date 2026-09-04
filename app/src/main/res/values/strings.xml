@@ -33,6 +33,8 @@
     <string name="contacts_permission_granted">Вызовы от сохранённых контактов разрешены.</string>
     <string name="contacts_permission_required">Нужно разрешение на контакты, чтобы включить это правило.</string>
     <string name="phone_number">Номер телефона</string>
+    <string name="phone_number_hint">Только цифры; знак + допустим только в начале. Код страны можно не указывать.</string>
+    <string name="choose_recent_number">Выбрать из недавних</string>
     <string name="rule_label">Название (необязательно)</string>
     <string name="rule_duration">Срок действия</string>
     <string name="duration_permanent">Постоянно</string>
@@ -47,12 +49,18 @@
     <string name="all_calls">Все вызовы</string>
     <string name="empty_journal">Журнал пока пуст.</string>
     <string name="no_matching_calls">Нет вызовов, подходящих под фильтр.</string>
+    <string name="hold_to_copy_number">Удерживайте номер, чтобы скопировать его.</string>
+    <string name="number_copied">Номер скопирован</string>
     <string name="welcome_title">Добро пожаловать</string>
     <string name="welcome_message">Для работы фильтра приложению нужен системный статус обработчика вызовов. Разрешение контактов можно включить отдельно в разделе «Политики».</string>
     <string name="later">Позже</string>
     <string name="add_number">Добавить номер</string>
     <string name="language">Язык приложения</string>
     <string name="choose_language">Выбрать язык</string>
+    <string name="theme">Тема</string>
+    <string name="theme_system">Системная</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
     <string name="language_russian">Русский</string>
     <string name="language_english">Английский</string>
     <string name="settings_description">Здесь можно изменить язык приложения и параметры фильтрации вызовов.</string>

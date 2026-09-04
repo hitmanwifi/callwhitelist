@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -125,15 +126,17 @@ fun HomeScreen(
 @Composable
 private fun CallLogRow(entry: CallLogEntry) {
     val blocked = entry.result.decision == CallDecision.BLOCK
-    ListItem(
-        leadingContent = {
-            Icon(
-                if (blocked) Icons.Outlined.Block else Icons.Outlined.CheckCircle,
-                contentDescription = null,
-                tint = if (blocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-            )
-        },
-        headlineContent = { Text(entry.number ?: stringResource(R.string.hidden_number)) },
-        supportingContent = { Text(if (blocked) stringResource(R.string.call_blocked) else stringResource(R.string.call_allowed)) },
-    )
+    Card(modifier = Modifier.fillMaxWidth()) {
+        ListItem(
+            leadingContent = {
+                Icon(
+                    if (blocked) Icons.Outlined.Block else Icons.Outlined.CheckCircle,
+                    contentDescription = null,
+                    tint = if (blocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                )
+            },
+            headlineContent = { Text(entry.number ?: stringResource(R.string.hidden_number)) },
+            supportingContent = { Text(if (blocked) stringResource(R.string.call_blocked) else stringResource(R.string.call_allowed)) },
+        )
+    }
 }

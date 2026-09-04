@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Contacts
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -47,6 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.core.content.ContextCompat
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -63,6 +66,7 @@ import org.alexrust.callwhitelist.model.PolicyCondition
 import org.alexrust.callwhitelist.model.PolicyMatchType
 import org.alexrust.callwhitelist.model.TimeWindow
 import org.alexrust.callwhitelist.system.CallScreeningAccess
+import org.alexrust.callwhitelist.domain.NormalizePhoneNumber
 import org.alexrust.callwhitelist.ui.components.FilteringStatusCard
 
 @Composable
@@ -71,6 +75,7 @@ fun PoliciesScreen(
     isFilteringActive: Boolean,
     filteringEnabled: Boolean,
     rules: List<NumberRule>,
+    recentNumbers: List<String>,
     contactsAllowed: Boolean,
     profile: FilterProfile?,
     onActivateFiltering: () -> Unit,
@@ -199,6 +204,7 @@ fun PoliciesScreen(
 
     if (showAddDialog) {
         AddNumberDialog(
+            recentNumbers = recentNumbers,
             onDismiss = { showAddDialog = false },
             onConfirm = { number, label, expiresAtMillis ->
                 onAddRule(
@@ -429,12 +435,18 @@ private fun NumberRuleRow(rule: NumberRule, onToggle: (Boolean) -> Unit, onDelet
 }
 
 @Composable
-private fun AddNumberDialog(onDismiss: () -> Unit, onConfirm: (String, String, Long?) -> Unit) {
+private fun AddNumberDialog(
+    recentNumbers: List<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Long?) -> Unit,
+) {
     var number by remember { mutableStateOf("") }
     var label by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf(TemporaryDuration.PERMANENT) }
     var durationExpanded by remember { mutableStateOf(false) }
-    val canSave = number.trim().isNotEmpty()
+    var recentNumbersExpanded by remember { mutableStateOf(false) }
+    val normalizedNumber = remember(number) { NormalizePhoneNumber()(number) }
+    val canSave = normalizedNumber != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -443,10 +455,32 @@ private fun AddNumberDialog(onDismiss: () -> Unit, onConfirm: (String, String, L
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = number,
-                    onValueChange = { number = it },
+                    onValueChange = { number = sanitizePhoneInput(it) },
                     label = { Text(stringResource(R.string.phone_number)) },
+                    supportingText = { Text(stringResource(R.string.phone_number_hint)) },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 )
+                if (recentNumbers.isNotEmpty()) {
+                    TextButton(onClick = { recentNumbersExpanded = true }) {
+                        Icon(Icons.Outlined.History, contentDescription = null)
+                        Text(stringResource(R.string.choose_recent_number))
+                    }
+                    DropdownMenu(
+                        expanded = recentNumbersExpanded,
+                        onDismissRequest = { recentNumbersExpanded = false },
+                    ) {
+                        recentNumbers.forEach { recentNumber ->
+                            DropdownMenuItem(
+                                text = { Text(recentNumber) },
+                                onClick = {
+                                    number = sanitizePhoneInput(recentNumber)
+                                    recentNumbersExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
@@ -477,7 +511,9 @@ private fun AddNumberDialog(onDismiss: () -> Unit, onConfirm: (String, String, L
             TextButton(
                 enabled = canSave,
                 onClick = {
-                    onConfirm(number.trim(), label.trim(), durationToExpirationMillis(duration))
+                    normalizedNumber?.let {
+                        onConfirm(it, label.trim(), durationToExpirationMillis(duration))
+                    }
                 },
             ) {
                 Text(stringResource(R.string.save))
@@ -487,6 +523,14 @@ private fun AddNumberDialog(onDismiss: () -> Unit, onConfirm: (String, String, L
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+private fun sanitizePhoneInput(value: String): String = buildString {
+    value.forEachIndexed { index, char ->
+        if (char.isDigit() || (char == '+' && index == 0)) {
+            append(char)
+        }
+    }
 }
 
 private enum class TemporaryDuration { PERMANENT, ONE_HOUR, ONE_DAY, SEVEN_DAYS }

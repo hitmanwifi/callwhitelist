@@ -1,9 +1,15 @@
 package org.alexrust.callwhitelist.ui.journal
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.alexrust.callwhitelist.R
@@ -75,9 +82,16 @@ fun JournalScreen(
                 )
             }
         }
+        item {
+            Text(
+                stringResource(R.string.hold_to_copy_number),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         if (visibleEntries.isEmpty()) {
             item {
-                Card {
+                Card(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         stringResource(if (entries.isEmpty()) R.string.empty_journal else R.string.no_matching_calls),
                         modifier = Modifier.padding(16.dp),
@@ -90,10 +104,31 @@ fun JournalScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun JournalRow(entry: CallLogEntry) {
+    val context = LocalContext.current
     val isBlocked = entry.result.decision == CallDecision.BLOCK
-    Card {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = {
+                    entry.number?.let { number ->
+                        val clipboard = context.getSystemService(ClipboardManager::class.java)
+                        clipboard?.setPrimaryClip(
+                            ClipData.newPlainText(context.getString(R.string.phone_number), number),
+                        )
+                        Toast.makeText(
+                            context,
+                            R.string.number_copied,
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                },
+            ),
+    ) {
         ListItem(
             leadingContent = {
                 Icon(

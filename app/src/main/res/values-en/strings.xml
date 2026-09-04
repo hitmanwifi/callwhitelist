@@ -33,6 +33,8 @@
     <string name="contacts_permission_granted">Calls from saved contacts are allowed.</string>
     <string name="contacts_permission_required">Contacts permission is required to enable this rule.</string>
     <string name="phone_number">Phone number</string>
+    <string name="phone_number_hint">Digits only; + is allowed only at the beginning. Country code is optional.</string>
+    <string name="choose_recent_number">Choose from recent</string>
     <string name="rule_label">Label (optional)</string>
     <string name="rule_duration">Duration</string>
     <string name="duration_permanent">Permanent</string>
@@ -47,12 +49,18 @@
     <string name="all_calls">All calls</string>
     <string name="empty_journal">The journal is empty.</string>
     <string name="no_matching_calls">No calls match this filter.</string>
+    <string name="hold_to_copy_number">Hold a number to copy it.</string>
+    <string name="number_copied">Number copied</string>
     <string name="welcome_title">Welcome</string>
     <string name="welcome_message">The filter needs the system call-handler role to process incoming calls. Contacts permission can be enabled separately in Policies.</string>
     <string name="later">Later</string>
     <string name="add_number">Add number</string>
     <string name="language">App language</string>
     <string name="choose_language">Choose language</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="language_russian">Russian</string>
     <string name="language_english">English</string>
     <string name="settings_description">Change the app language and call filtering options here.</string>
