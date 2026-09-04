@@ -51,6 +51,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -450,9 +455,12 @@ private fun AddNumberDialog(
     var durationExpanded by remember { mutableStateOf(false) }
     var countryExpanded by remember { mutableStateOf(false) }
     var recentPickerVisible by remember { mutableStateOf(false) }
-    var country by remember { mutableStateOf(PhoneCountry.WITHOUT_CODE) }
-    val normalizedNumber = remember(number) { NormalizePhoneNumber()(number) }
+    var country by remember { mutableStateOf(PhoneCountry.RUSSIA) }
+    val normalizedNumber = remember(number, country) {
+        NormalizePhoneNumber()(numberForStorage(number, country))
+    }
     val canSave = normalizedNumber != null
+    val maskResource = country.maskResource
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -462,50 +470,65 @@ private fun AddNumberDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(stringResource(R.string.choose_country))
-                Box {
-                    OutlinedButton(onClick = { countryExpanded = true }) {
-                        Icon(Icons.Outlined.Language, contentDescription = null)
-                        Text(stringResource(country.labelResource))
-                    }
-                    DropdownMenu(
-                        expanded = countryExpanded,
-                        onDismissRequest = { countryExpanded = false },
-                    ) {
-                        PhoneCountry.entries.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(stringResource(option.labelResource)) },
-                                onClick = {
-                                    country = option
-                                    number = applyCountryCode(number, option)
-                                    countryExpanded = false
-                                },
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Box(modifier = Modifier.weight(0.44f)) {
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            onClick = { countryExpanded = true },
+                        ) {
+                            Icon(Icons.Outlined.Language, contentDescription = null)
+                            Text(
+                                stringResource(country.shortLabelResource),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
+                        DropdownMenu(
+                            expanded = countryExpanded,
+                            onDismissRequest = { countryExpanded = false },
+                        ) {
+                            PhoneCountry.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(option.labelResource)) },
+                                    onClick = {
+                                        number = switchCountryNumber(number, country, option)
+                                        country = option
+                                        countryExpanded = false
+                                    },
+                                )
+                            }
+                        }
                     }
-                }
-                Row(verticalAlignment = Alignment.Top) {
                     OutlinedTextField(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(0.56f),
                         value = number,
-                        onValueChange = { number = sanitizePhoneInput(it) },
-                        label = { Text(stringResource(R.string.phone_number)) },
-                        placeholder = { Text(stringResource(R.string.phone_number_example)) },
+                        onValueChange = {
+                            number = if (country.dialCode == null) {
+                                sanitizePhoneInput(it)
+                            } else {
+                                it.filter(Char::isDigit)
+                            }
+                        },
+                        placeholder = {
+                            maskResource?.let { resource ->
+                                Text(
+                                    stringResource(resource),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+                        },
                         supportingText = {
                             Text(stringResource(country.formatResource))
                         },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        visualTransformation = PhoneMaskVisualTransformation(country),
                     )
-                    IconButton(
-                        onClick = { if (!number.startsWith("+")) number = "+$number" },
-                        enabled = !number.startsWith("+"),
-                    ) {
-                        Icon(
-                            Icons.Outlined.Add,
-                            contentDescription = stringResource(R.string.add_plus),
-                        )
-                    }
                 }
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(),
@@ -580,7 +603,7 @@ private fun AddNumberDialog(
                             TextButton(
                                 modifier = Modifier.fillMaxWidth(),
                                 onClick = {
-                                    number = sanitizePhoneInput(recentNumber)
+                                    number = numberFromSelectedCountry(recentNumber, country)
                                     recentPickerVisible = false
                                 },
                             ) {
@@ -607,26 +630,92 @@ private fun sanitizePhoneInput(value: String): String = buildString {
     }
 }
 
+private fun numberForStorage(value: String, country: PhoneCountry): String =
+    country.dialCode?.let { "$it${value.filter(Char::isDigit)}" } ?: value
+
+private fun numberFromSelectedCountry(value: String, country: PhoneCountry): String {
+    val digits = value.filter(Char::isDigit)
+    val countryDigits = country.dialCode?.filter(Char::isDigit).orEmpty()
+    return if (country.dialCode == null) value else digits.removePrefix(countryDigits)
+}
+
+private fun switchCountryNumber(
+    value: String,
+    currentCountry: PhoneCountry,
+    newCountry: PhoneCountry,
+): String {
+    val fullNumber = numberForStorage(value, currentCountry)
+    return numberFromSelectedCountry(fullNumber, newCountry)
+}
+
 private enum class PhoneCountry(
     val dialCode: String?,
     val labelResource: Int,
+    val shortLabelResource: Int,
     val formatResource: Int,
+    val maskResource: Int?,
 ) {
-    WITHOUT_CODE(null, R.string.country_without_code, R.string.phone_format_any),
-    RUSSIA("+7", R.string.country_russia, R.string.phone_format_russia),
-    KAZAKHSTAN("+7", R.string.country_kazakhstan, R.string.phone_format_kazakhstan),
-    BELARUS("+375", R.string.country_belarus, R.string.phone_format_belarus),
-    UKRAINE("+380", R.string.country_ukraine, R.string.phone_format_ukraine),
-    GERMANY("+49", R.string.country_germany, R.string.phone_format_germany),
-    UNITED_KINGDOM("+44", R.string.country_united_kingdom, R.string.phone_format_united_kingdom),
-    UNITED_STATES("+1", R.string.country_united_states, R.string.phone_format_united_states),
+    WITHOUT_CODE(null, R.string.country_without_code, R.string.country_without_code_short, R.string.phone_format_any, null),
+    RUSSIA("+7", R.string.country_russia, R.string.country_russia_short, R.string.phone_format_russia, R.string.phone_mask_russia),
+    KAZAKHSTAN("+7", R.string.country_kazakhstan, R.string.country_kazakhstan_short, R.string.phone_format_kazakhstan, R.string.phone_mask_kazakhstan),
+    BELARUS("+375", R.string.country_belarus, R.string.country_belarus_short, R.string.phone_format_belarus, R.string.phone_mask_belarus),
+    UKRAINE("+380", R.string.country_ukraine, R.string.country_ukraine_short, R.string.phone_format_ukraine, R.string.phone_mask_ukraine),
+    GERMANY("+49", R.string.country_germany, R.string.country_germany_short, R.string.phone_format_germany, R.string.phone_mask_germany),
+    UNITED_KINGDOM("+44", R.string.country_united_kingdom, R.string.country_united_kingdom_short, R.string.phone_format_united_kingdom, R.string.phone_mask_united_kingdom),
+    UNITED_STATES("+1", R.string.country_united_states, R.string.country_united_states_short, R.string.phone_format_united_states, R.string.phone_mask_united_states),
 }
 
-private fun applyCountryCode(value: String, country: PhoneCountry): String {
+private class PhoneMaskVisualTransformation(
+    private val country: PhoneCountry,
+) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        if (country.dialCode == null) return TransformedText(text, OffsetMapping.Identity)
+        val formatted = formatByMask(text.text, country)
+        return TransformedText(
+            text = AnnotatedString(formatted),
+            offsetMapping = object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                    if (offset <= 0) return 0
+                    var digitsSeen = 0
+                    formatted.forEachIndexed { index, char ->
+                        if (char.isDigit()) {
+                            digitsSeen++
+                            if (digitsSeen == offset) return index + 1
+                        }
+                    }
+                    return formatted.length
+                }
+
+                override fun transformedToOriginal(offset: Int): Int =
+                    formatted.take(offset.coerceIn(0, formatted.length)).count(Char::isDigit)
+            },
+        )
+    }
+}
+
+private fun formatByMask(value: String, country: PhoneCountry): String {
     val digits = value.filter(Char::isDigit)
-    return country.dialCode?.let { code ->
-        "+${code.drop(1)}${digits.removePrefix(code.drop(1))}"
-    } ?: value
+    val mask = when (country) {
+        PhoneCountry.RUSSIA, PhoneCountry.KAZAKHSTAN -> "(###) ###-##-##"
+        PhoneCountry.BELARUS, PhoneCountry.UKRAINE -> "## ###-##-##"
+        PhoneCountry.GERMANY -> "### ########"
+        PhoneCountry.UNITED_KINGDOM -> "## #### ####"
+        PhoneCountry.UNITED_STATES -> "(###) ###-####"
+        PhoneCountry.WITHOUT_CODE -> return value
+    }
+    val result = StringBuilder()
+    var digitIndex = 0
+    mask.forEachIndexed { index, char ->
+        if (char == '#') {
+            if (digitIndex >= digits.length) return@forEachIndexed
+            result.append(digits[digitIndex++])
+        } else if (digitIndex > 0 && digitIndex < digits.length &&
+            mask.substring(index + 1).contains('#')
+        ) {
+            result.append(char)
+        }
+    }
+    return result.toString()
 }
 
 private enum class TemporaryDuration { PERMANENT, ONE_HOUR, ONE_DAY, SEVEN_DAYS }
