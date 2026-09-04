@@ -4,21 +4,25 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Contacts
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -444,7 +448,9 @@ private fun AddNumberDialog(
     var label by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf(TemporaryDuration.PERMANENT) }
     var durationExpanded by remember { mutableStateOf(false) }
-    var recentNumbersExpanded by remember { mutableStateOf(false) }
+    var countryExpanded by remember { mutableStateOf(false) }
+    var recentPickerVisible by remember { mutableStateOf(false) }
+    var country by remember { mutableStateOf(PhoneCountry.WITHOUT_CODE) }
     val normalizedNumber = remember(number) { NormalizePhoneNumber()(number) }
     val canSave = normalizedNumber != null
 
@@ -452,34 +458,68 @@ private fun AddNumberDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_number)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = number,
-                    onValueChange = { number = sanitizePhoneInput(it) },
-                    label = { Text(stringResource(R.string.phone_number)) },
-                    supportingText = { Text(stringResource(R.string.phone_number_hint)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                )
-                if (recentNumbers.isNotEmpty()) {
-                    TextButton(onClick = { recentNumbersExpanded = true }) {
-                        Icon(Icons.Outlined.History, contentDescription = null)
-                        Text(stringResource(R.string.choose_recent_number))
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(stringResource(R.string.choose_country))
+                Box {
+                    OutlinedButton(onClick = { countryExpanded = true }) {
+                        Icon(Icons.Outlined.Language, contentDescription = null)
+                        Text(stringResource(country.labelResource))
                     }
                     DropdownMenu(
-                        expanded = recentNumbersExpanded,
-                        onDismissRequest = { recentNumbersExpanded = false },
+                        expanded = countryExpanded,
+                        onDismissRequest = { countryExpanded = false },
                     ) {
-                        recentNumbers.forEach { recentNumber ->
+                        PhoneCountry.entries.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(recentNumber) },
+                                text = { Text(stringResource(option.labelResource)) },
                                 onClick = {
-                                    number = sanitizePhoneInput(recentNumber)
-                                    recentNumbersExpanded = false
+                                    country = option
+                                    number = applyCountryCode(number, option)
+                                    countryExpanded = false
                                 },
                             )
                         }
                     }
+                }
+                Row(verticalAlignment = Alignment.Top) {
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1f),
+                        value = number,
+                        onValueChange = { number = sanitizePhoneInput(it) },
+                        label = { Text(stringResource(R.string.phone_number)) },
+                        placeholder = { Text(stringResource(R.string.phone_number_example)) },
+                        supportingText = {
+                            Text(stringResource(country.formatResource))
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    )
+                    IconButton(
+                        onClick = { if (!number.startsWith("+")) number = "+$number" },
+                        enabled = !number.startsWith("+"),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Add,
+                            contentDescription = stringResource(R.string.add_plus),
+                        )
+                    }
+                }
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { recentPickerVisible = true },
+                ) {
+                    Icon(Icons.Outlined.History, contentDescription = null)
+                    Text(stringResource(R.string.choose_from_journal))
+                }
+                if (recentNumbers.isEmpty()) {
+                    Text(
+                        stringResource(R.string.journal_numbers_empty_for_picker),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 OutlinedTextField(
                     value = label,
@@ -523,6 +563,40 @@ private fun AddNumberDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
+
+    if (recentPickerVisible) {
+        AlertDialog(
+            onDismissRequest = { recentPickerVisible = false },
+            title = { Text(stringResource(R.string.recent_picker_title)) },
+            text = {
+                if (recentNumbers.isEmpty()) {
+                    Text(stringResource(R.string.journal_numbers_empty_for_picker))
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 280.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        items(recentNumbers) { recentNumber ->
+                            TextButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    number = sanitizePhoneInput(recentNumber)
+                                    recentPickerVisible = false
+                                },
+                            ) {
+                                Text(recentNumber)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { recentPickerVisible = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 }
 
 private fun sanitizePhoneInput(value: String): String = buildString {
@@ -531,6 +605,28 @@ private fun sanitizePhoneInput(value: String): String = buildString {
             append(char)
         }
     }
+}
+
+private enum class PhoneCountry(
+    val dialCode: String?,
+    val labelResource: Int,
+    val formatResource: Int,
+) {
+    WITHOUT_CODE(null, R.string.country_without_code, R.string.phone_format_any),
+    RUSSIA("+7", R.string.country_russia, R.string.phone_format_russia),
+    KAZAKHSTAN("+7", R.string.country_kazakhstan, R.string.phone_format_kazakhstan),
+    BELARUS("+375", R.string.country_belarus, R.string.phone_format_belarus),
+    UKRAINE("+380", R.string.country_ukraine, R.string.phone_format_ukraine),
+    GERMANY("+49", R.string.country_germany, R.string.phone_format_germany),
+    UNITED_KINGDOM("+44", R.string.country_united_kingdom, R.string.phone_format_united_kingdom),
+    UNITED_STATES("+1", R.string.country_united_states, R.string.phone_format_united_states),
+}
+
+private fun applyCountryCode(value: String, country: PhoneCountry): String {
+    val digits = value.filter(Char::isDigit)
+    return country.dialCode?.let { code ->
+        "+${code.drop(1)}${digits.removePrefix(code.drop(1))}"
+    } ?: value
 }
 
 private enum class TemporaryDuration { PERMANENT, ONE_HOUR, ONE_DAY, SEVEN_DAYS }
