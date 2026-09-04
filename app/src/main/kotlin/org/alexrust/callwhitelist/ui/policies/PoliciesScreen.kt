@@ -49,6 +49,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -455,12 +456,14 @@ private fun AddNumberDialog(
     var durationExpanded by remember { mutableStateOf(false) }
     var countryExpanded by remember { mutableStateOf(false) }
     var recentPickerVisible by remember { mutableStateOf(false) }
-    var country by remember { mutableStateOf(PhoneCountry.RUSSIA) }
+    val deviceLocale = LocalConfiguration.current.locales[0]
+    var country by remember(deviceLocale.language, deviceLocale.country) {
+        mutableStateOf(PhoneCountry.fromLocale(deviceLocale.language, deviceLocale.country))
+    }
     val normalizedNumber = remember(number, country) {
         NormalizePhoneNumber()(numberForStorage(number, country))
     }
     val canSave = normalizedNumber != null
-    val maskResource = country.maskResource
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -482,7 +485,7 @@ private fun AddNumberDialog(
                         ) {
                             Icon(Icons.Outlined.Language, contentDescription = null)
                             Text(
-                                stringResource(country.shortLabelResource),
+                                country.dialCode,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -507,29 +510,20 @@ private fun AddNumberDialog(
                         modifier = Modifier.weight(0.56f),
                         value = number,
                         onValueChange = {
-                            number = if (country.dialCode == null) {
-                                sanitizePhoneInput(it)
-                            } else {
-                                it.filter(Char::isDigit)
-                            }
+                            number = it.filter(Char::isDigit)
                         },
-                        placeholder = {
-                            maskResource?.let { resource ->
-                                Text(
-                                    stringResource(resource),
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
-                        },
-                        supportingText = {
-                            Text(stringResource(country.formatResource))
-                        },
+                        placeholder = { Text(stringResource(country.maskResource)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         visualTransformation = PhoneMaskVisualTransformation(country),
                     )
                 }
+                Text(
+                    text = stringResource(country.formatResource),
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { recentPickerVisible = true },
@@ -622,21 +616,12 @@ private fun AddNumberDialog(
     }
 }
 
-private fun sanitizePhoneInput(value: String): String = buildString {
-    value.forEachIndexed { index, char ->
-        if (char.isDigit() || (char == '+' && index == 0)) {
-            append(char)
-        }
-    }
-}
-
 private fun numberForStorage(value: String, country: PhoneCountry): String =
-    country.dialCode?.let { "$it${value.filter(Char::isDigit)}" } ?: value
+    "${country.dialCode}${value.filter(Char::isDigit)}"
 
 private fun numberFromSelectedCountry(value: String, country: PhoneCountry): String {
     val digits = value.filter(Char::isDigit)
-    val countryDigits = country.dialCode?.filter(Char::isDigit).orEmpty()
-    return if (country.dialCode == null) value else digits.removePrefix(countryDigits)
+    return digits.removePrefix(country.dialCode.filter(Char::isDigit))
 }
 
 private fun switchCountryNumber(
@@ -649,27 +634,58 @@ private fun switchCountryNumber(
 }
 
 private enum class PhoneCountry(
-    val dialCode: String?,
+    val dialCode: String,
     val labelResource: Int,
-    val shortLabelResource: Int,
     val formatResource: Int,
-    val maskResource: Int?,
+    val maskResource: Int,
 ) {
-    WITHOUT_CODE(null, R.string.country_without_code, R.string.country_without_code_short, R.string.phone_format_any, null),
-    RUSSIA("+7", R.string.country_russia, R.string.country_russia_short, R.string.phone_format_russia, R.string.phone_mask_russia),
-    KAZAKHSTAN("+7", R.string.country_kazakhstan, R.string.country_kazakhstan_short, R.string.phone_format_kazakhstan, R.string.phone_mask_kazakhstan),
-    BELARUS("+375", R.string.country_belarus, R.string.country_belarus_short, R.string.phone_format_belarus, R.string.phone_mask_belarus),
-    UKRAINE("+380", R.string.country_ukraine, R.string.country_ukraine_short, R.string.phone_format_ukraine, R.string.phone_mask_ukraine),
-    GERMANY("+49", R.string.country_germany, R.string.country_germany_short, R.string.phone_format_germany, R.string.phone_mask_germany),
-    UNITED_KINGDOM("+44", R.string.country_united_kingdom, R.string.country_united_kingdom_short, R.string.phone_format_united_kingdom, R.string.phone_mask_united_kingdom),
-    UNITED_STATES("+1", R.string.country_united_states, R.string.country_united_states_short, R.string.phone_format_united_states, R.string.phone_mask_united_states),
+    RUSSIA("+7", R.string.country_russia, R.string.phone_format_russia, R.string.phone_mask_russia),
+    KAZAKHSTAN("+7", R.string.country_kazakhstan, R.string.phone_format_kazakhstan, R.string.phone_mask_kazakhstan),
+    BELARUS("+375", R.string.country_belarus, R.string.phone_format_belarus, R.string.phone_mask_belarus),
+    UKRAINE("+380", R.string.country_ukraine, R.string.phone_format_ukraine, R.string.phone_mask_ukraine),
+    ARMENIA("+374", R.string.country_armenia, R.string.phone_format_armenia, R.string.phone_mask_armenia),
+    AZERBAIJAN("+994", R.string.country_azerbaijan, R.string.phone_format_azerbaijan, R.string.phone_mask_azerbaijan),
+    GEORGIA("+995", R.string.country_georgia, R.string.phone_format_georgia, R.string.phone_mask_georgia),
+    MOLDOVA("+373", R.string.country_moldova, R.string.phone_format_moldova, R.string.phone_mask_moldova),
+    GERMANY("+49", R.string.country_germany, R.string.phone_format_germany, R.string.phone_mask_germany),
+    FRANCE("+33", R.string.country_france, R.string.phone_format_france, R.string.phone_mask_france),
+    ITALY("+39", R.string.country_italy, R.string.phone_format_italy, R.string.phone_mask_italy),
+    SPAIN("+34", R.string.country_spain, R.string.phone_format_spain, R.string.phone_mask_spain),
+    UNITED_KINGDOM("+44", R.string.country_united_kingdom, R.string.phone_format_united_kingdom, R.string.phone_mask_united_kingdom),
+    UNITED_STATES("+1", R.string.country_united_states, R.string.phone_format_united_states, R.string.phone_mask_united_states),
+    CANADA("+1", R.string.country_canada, R.string.phone_format_canada, R.string.phone_mask_canada),
+    TURKEY("+90", R.string.country_turkey, R.string.phone_format_turkey, R.string.phone_mask_turkey),
+    ISRAEL("+972", R.string.country_israel, R.string.phone_format_israel, R.string.phone_mask_israel),
+
+    ;
+
+    companion object {
+        fun fromLocale(language: String, region: String): PhoneCountry = when {
+            language == "kk" || region == "KZ" -> KAZAKHSTAN
+            language == "be" || region == "BY" -> BELARUS
+            language == "uk" || region == "UA" -> UKRAINE
+            language == "hy" || region == "AM" -> ARMENIA
+            language == "az" || region == "AZ" -> AZERBAIJAN
+            language == "ka" || region == "GE" -> GEORGIA
+            language == "ro" || region == "MD" -> MOLDOVA
+            language == "de" || region == "DE" -> GERMANY
+            language == "fr" || region == "FR" -> FRANCE
+            language == "it" || region == "IT" -> ITALY
+            language == "es" || region == "ES" -> SPAIN
+            language == "en" && region == "GB" -> UNITED_KINGDOM
+            language == "en" && region == "CA" -> CANADA
+            language == "tr" || region == "TR" -> TURKEY
+            language == "he" || region == "IL" -> ISRAEL
+            language == "en" -> UNITED_STATES
+            else -> RUSSIA
+        }
+    }
 }
 
 private class PhoneMaskVisualTransformation(
     private val country: PhoneCountry,
 ) : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
-        if (country.dialCode == null) return TransformedText(text, OffsetMapping.Identity)
         val formatted = formatByMask(text.text, country)
         return TransformedText(
             text = AnnotatedString(formatted),
@@ -698,10 +714,18 @@ private fun formatByMask(value: String, country: PhoneCountry): String {
     val mask = when (country) {
         PhoneCountry.RUSSIA, PhoneCountry.KAZAKHSTAN -> "(###) ###-##-##"
         PhoneCountry.BELARUS, PhoneCountry.UKRAINE -> "## ###-##-##"
+        PhoneCountry.ARMENIA -> "## ###-###"
+        PhoneCountry.AZERBAIJAN -> "## ###-##-##"
+        PhoneCountry.GEORGIA -> "### ### ###"
+        PhoneCountry.MOLDOVA -> "## ##-##-##"
         PhoneCountry.GERMANY -> "### ########"
+        PhoneCountry.FRANCE -> "# ## ## ## ##"
+        PhoneCountry.ITALY -> "### ### ####"
+        PhoneCountry.SPAIN -> "### ### ###"
         PhoneCountry.UNITED_KINGDOM -> "## #### ####"
-        PhoneCountry.UNITED_STATES -> "(###) ###-####"
-        PhoneCountry.WITHOUT_CODE -> return value
+        PhoneCountry.UNITED_STATES, PhoneCountry.CANADA -> "(###) ###-####"
+        PhoneCountry.TURKEY -> "### ### ## ##"
+        PhoneCountry.ISRAEL -> "##-###-####"
     }
     val result = StringBuilder()
     var digitIndex = 0
