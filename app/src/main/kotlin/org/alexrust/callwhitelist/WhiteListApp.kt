@@ -27,6 +27,7 @@ import org.alexrust.callwhitelist.model.ThemeMode
 import org.alexrust.callwhitelist.preferences.UserPreferences
 import org.alexrust.callwhitelist.navigation.AppNavigation
 import org.alexrust.callwhitelist.system.CallScreeningAccess
+import org.alexrust.callwhitelist.system.NotificationAccess
 
 @Composable
 fun WhiteListApp(openJournal: Boolean = false) {
@@ -44,6 +45,10 @@ fun WhiteListApp(openJournal: Boolean = false) {
         contract = ActivityResultContracts.StartActivityForResult(),
     ) {
         isFilteringActive = CallScreeningAccess.isRoleHeld(context)
+    }
+
+    LaunchedEffect(context) {
+        NotificationAccess.ensureBlockedCallsChannel(context)
     }
 
     LaunchedEffect(Unit) {

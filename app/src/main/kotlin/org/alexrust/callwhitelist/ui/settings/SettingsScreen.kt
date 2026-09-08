@@ -62,14 +62,27 @@ fun SettingsScreen(
     var notificationPermissionGranted by remember(context) {
         mutableStateOf(NotificationAccess.hasPermission(context))
     }
+    var appNotificationsEnabled by remember(context) {
+        mutableStateOf(NotificationAccess.areAppNotificationsEnabled(context))
+    }
+    var blockedCallsChannelEnabled by remember(context) {
+        mutableStateOf(NotificationAccess.isBlockedCallsChannelEnabled(context))
+    }
+    var pendingNotificationEnable by remember { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { granted -> notificationPermissionGranted = granted }
+    ) { granted ->
+        notificationPermissionGranted = granted
+        pendingNotificationEnable = false
+        onNotificationsEnabledChanged(granted)
+    }
 
     androidx.compose.runtime.DisposableEffect(lifecycleOwner, context) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 notificationPermissionGranted = NotificationAccess.hasPermission(context)
+                appNotificationsEnabled = NotificationAccess.areAppNotificationsEnabled(context)
+                blockedCallsChannelEnabled = NotificationAccess.isBlockedCallsChannelEnabled(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -78,6 +91,14 @@ fun SettingsScreen(
     var languageExpanded by remember { mutableStateOf(false) }
     var periodExpanded by remember { mutableStateOf(false) }
     var themeExpanded by remember { mutableStateOf(false) }
+    val notificationsReady = notificationPermissionGranted &&
+        appNotificationsEnabled && blockedCallsChannelEnabled
+    val notificationStatus = when {
+        !notificationPermissionGranted -> R.string.notifications_permission_required
+        !appNotificationsEnabled -> R.string.notifications_app_disabled
+        !blockedCallsChannelEnabled -> R.string.notifications_channel_disabled
+        else -> R.string.notifications_permission_granted
+    }
 
     Column(
         modifier = modifier
@@ -140,13 +161,7 @@ fun SettingsScreen(
             Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(stringResource(R.string.blocked_call_notifications))
                 Text(
-                    stringResource(
-                        if (notificationPermissionGranted) {
-                            R.string.notifications_permission_granted
-                        } else {
-                            R.string.notifications_permission_required
-                        },
-                    ),
+                    stringResource(notificationStatus),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -154,14 +169,19 @@ fun SettingsScreen(
             Switch(
                 checked = notificationsEnabled,
                 onCheckedChange = { enabled ->
-                    onNotificationsEnabledChanged(enabled)
-                    if (enabled && NotificationAccess.requiresRuntimePermission() && !notificationPermissionGranted) {
+                    if (!enabled) {
+                        pendingNotificationEnable = false
+                        onNotificationsEnabledChanged(false)
+                    } else if (NotificationAccess.requiresRuntimePermission() && !notificationPermissionGranted) {
+                        pendingNotificationEnable = true
                         notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        onNotificationsEnabledChanged(true)
                     }
                 },
             )
         }
-        if (!notificationPermissionGranted) {
+        if (!notificationsReady || pendingNotificationEnable) {
             TextButton(
                 onClick = {
                     context.startActivity(

@@ -133,6 +133,9 @@
     <string name="blocked_call_notifications">Notify about blocked calls</string>
     <string name="notifications_permission_granted">System notifications are allowed.</string>
     <string name="notifications_permission_required">Allow notifications in system settings to receive messages.</string>
+    <string name="notifications_app_disabled">App notifications are disabled in system settings.</string>
+    <string name="notifications_channel_disabled">The blocked calls notification channel is disabled.</string>
+    <string name="blocked_calls_channel_name">Blocked calls</string>
     <string name="open_notification_settings">Open notification settings</string>
     <string name="default_profile">Default profile</string>
     <string name="default_action">Action when no rule matches</string>

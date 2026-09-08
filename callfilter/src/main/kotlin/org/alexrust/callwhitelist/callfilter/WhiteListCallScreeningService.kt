@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -31,9 +32,12 @@ import org.alexrust.callwhitelist.model.FilterResult
 import org.alexrust.callwhitelist.model.FilterSnapshot
 import org.alexrust.callwhitelist.model.MatchSource
 import org.alexrust.callwhitelist.model.OPEN_JOURNAL_ACTION
+import org.alexrust.callwhitelist.model.BLOCKED_CALLS_CHANNEL_ID
 import org.alexrust.callwhitelist.preferences.UserPreferences
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.Build
+import android.util.Log
 
 class WhiteListCallScreeningService : CallScreeningService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -66,6 +70,25 @@ class WhiteListCallScreeningService : CallScreeningService() {
                 )
             }
 
+            val entry = CallLogEntry(
+                timestampMillis = eventTimestampMillis,
+                number = rawNumber,
+                result = result,
+            )
+            val persistedBeforeResponse = runCatching {
+                withTimeoutOrNull(PERSISTENCE_TIMEOUT_MILLIS) {
+                    callLogStore.appendIfAbsent(entry)
+                    notifyIfEnabled(rawNumber, result, eventTimestampMillis)
+                    true
+                } == true
+            }.getOrElse {
+                Log.w(TAG, "Journal or blocked-call notification failed", it)
+                false
+            }
+            if (!persistedBeforeResponse) {
+                Log.w(TAG, "Journal persistence exceeded the bounded pre-response window")
+            }
+
             val response = CallResponse.Builder().apply {
                 if (result.decision == CallDecision.BLOCK) {
                     setDisallowCall(true)
@@ -77,18 +100,7 @@ class WhiteListCallScreeningService : CallScreeningService() {
                 }
             }.build()
 
-            // The system response is the deadline-critical operation. Logging follows it.
             respondToCall(callDetails, response)
-            runCatching {
-                callLogStore.appendIfAbsent(
-                    CallLogEntry(
-                        timestampMillis = eventTimestampMillis,
-                        number = rawNumber,
-                        result = result,
-                    ),
-                )
-            }
-            runCatching { notifyIfEnabled(rawNumber, result) }
         }
     }
 
@@ -102,27 +114,51 @@ class WhiteListCallScreeningService : CallScreeningService() {
         profiles = listOf(FilterProfile(name = "Default")),
     )
 
-    private suspend fun notifyIfEnabled(rawNumber: String?, result: FilterResult) {
+    private suspend fun notifyIfEnabled(
+        rawNumber: String?,
+        result: FilterResult,
+        eventTimestampMillis: Long,
+    ) {
         if (result.decision != CallDecision.BLOCK) return
-        if (!UserPreferences(applicationContext).notificationsEnabled.first()) return
+        if (!UserPreferences(applicationContext).notificationsEnabled.first()) {
+            Log.i(TAG, "Blocked-call notification skipped: app preference is disabled")
+            return
+        }
         if (
-            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(
                 applicationContext,
                 Manifest.permission.POST_NOTIFICATIONS,
             ) != PackageManager.PERMISSION_GRANTED
-        ) return
+        ) {
+            Log.w(TAG, "Blocked-call notification skipped: POST_NOTIFICATIONS is denied")
+            return
+        }
 
         val notificationManager = NotificationManagerCompat.from(applicationContext)
-        if (!notificationManager.areNotificationsEnabled()) return
+        if (!notificationManager.areNotificationsEnabled()) {
+            Log.w(TAG, "Blocked-call notification skipped: app notifications are disabled")
+            return
+        }
 
-        val channel = NotificationChannel(
-            BLOCKED_CALLS_CHANNEL_ID,
-            getString(R.string.blocked_call_notification_channel),
-            NotificationManager.IMPORTANCE_DEFAULT,
-        )
-        applicationContext.getSystemService(NotificationManager::class.java)
-            ?.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            applicationContext.getSystemService(NotificationManager::class.java)
+                ?.createNotificationChannel(
+                    NotificationChannel(
+                        BLOCKED_CALLS_CHANNEL_ID,
+                        getString(R.string.blocked_call_notification_channel),
+                        NotificationManager.IMPORTANCE_DEFAULT,
+                    ),
+                )
+            if (
+                applicationContext.getSystemService(NotificationManager::class.java)
+                    ?.getNotificationChannel(BLOCKED_CALLS_CHANNEL_ID)
+                    ?.importance == NotificationManager.IMPORTANCE_NONE
+            ) {
+                Log.w(TAG, "Blocked-call notification skipped: notification channel is disabled")
+                return
+            }
+        }
 
         val openJournalIntent = Intent().apply {
             action = OPEN_JOURNAL_ACTION
@@ -144,14 +180,14 @@ class WhiteListCallScreeningService : CallScreeningService() {
             .setAutoCancel(true)
             .setGroup(BLOCKED_CALLS_GROUP)
             .build()
-        notificationManager.notify(BLOCKED_CALL_NOTIFICATION_ID, notification)
+        notificationManager.notify(eventTimestampMillis.hashCode(), notification)
     }
 
     private companion object {
-        const val BLOCKED_CALLS_CHANNEL_ID = "blocked_calls"
         const val BLOCKED_CALLS_GROUP = "blocked_calls_group"
-        const val BLOCKED_CALL_NOTIFICATION_ID = 2001
         const val OPEN_JOURNAL_REQUEST_CODE = 2002
+        const val PERSISTENCE_TIMEOUT_MILLIS = 1_500L
+        const val TAG = "CallWhitelistFilter"
     }
 }
 

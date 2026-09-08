@@ -133,6 +133,9 @@
     <string name="blocked_call_notifications">Уведомлять о заблокированных вызовах</string>
     <string name="notifications_permission_granted">Системные уведомления разрешены.</string>
     <string name="notifications_permission_required">Разрешите уведомления в системных настройках, чтобы получать сообщения.</string>
+    <string name="notifications_app_disabled">Уведомления приложения отключены в системе.</string>
+    <string name="notifications_channel_disabled">Канал уведомлений о заблокированных вызовах отключён.</string>
+    <string name="blocked_calls_channel_name">Заблокированные вызовы</string>
     <string name="open_notification_settings">Открыть настройки уведомлений</string>
     <string name="default_profile">Профиль по умолчанию</string>
     <string name="default_action">Действие, если правило не совпало</string>
