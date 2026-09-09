@@ -90,6 +90,73 @@ class EvaluateFilterSnapshotTest {
     }
 
     @Test
+    fun contactIsAllowedFromSnapshotFlagWithoutGeneratedContactRule() {
+        val result = EvaluateFilterSnapshot()(
+            snapshot = FilterSnapshot(
+                version = 1,
+                contactsAllowed = true,
+                profiles = listOf(FilterProfile(name = "Default", defaultDecision = CallDecision.BLOCK)),
+            ),
+            rawNumber = "+79991234567",
+            isContact = true,
+            now = now,
+        )
+
+        assertEquals(CallDecision.ALLOW, result.decision)
+        assertEquals(MatchSource.CONTACT, result.source)
+    }
+
+    @Test
+    fun inactiveOnlyScheduleMeansFilteringDoesNotApply() {
+        val result = EvaluateFilterSnapshot()(
+            snapshot = FilterSnapshot(
+                version = 1,
+                profiles = listOf(
+                    FilterProfile(
+                        name = "Night only",
+                        defaultDecision = CallDecision.BLOCK,
+                        activeWindow = org.alexrust.callwhitelist.model.TimeWindow(
+                            daysOfWeek = setOf(1), startMinutes = 0, endMinutes = 60,
+                        ),
+                    ),
+                ),
+            ),
+            rawNumber = "+79991234567",
+            isContact = false,
+            now = now,
+        )
+
+        assertEquals(CallDecision.ALLOW, result.decision)
+    }
+
+    @Test
+    fun unknownRuleMatchesOrdinaryNonContactNumber() {
+        val result = EvaluateFilterSnapshot()(
+            snapshot = FilterSnapshot(
+                version = 1,
+                profiles = listOf(
+                    FilterProfile(
+                        name = "Default",
+                        defaultDecision = CallDecision.ALLOW,
+                        rules = listOf(
+                            FilterPolicyRule(
+                                condition = PolicyCondition(PolicyMatchType.UNKNOWN_NUMBER),
+                                decision = CallDecision.BLOCK,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            rawNumber = "+79991234567",
+            isContact = false,
+            now = now,
+        )
+
+        assertEquals(CallDecision.BLOCK, result.decision)
+        assertEquals(MatchSource.UNKNOWN, result.source)
+    }
+
+    @Test
     fun expiredExplicitRuleDoesNotMatch() {
         val result = EvaluateFilterSnapshot()(
             snapshot = FilterSnapshot(

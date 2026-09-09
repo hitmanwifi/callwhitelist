@@ -37,7 +37,7 @@ interface RuleStore {
 class RoomRuleStore(context: Context) : RuleStore {
     private val appContext = context.applicationContext
     private val dao = WhiteListDatabaseProvider.get(context).numberRuleDao()
-    private val snapshotStore = FilterSnapshotStore(appContext)
+    private val coordinator = FilterSnapshotCoordinator.get(appContext)
     private val userPreferences = UserPreferences(appContext)
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -73,9 +73,6 @@ class RoomRuleStore(context: Context) : RuleStore {
     private suspend fun publishSnapshot() {
         val contactsAreAllowed = userPreferences.contactsAllowed.first()
         val filteringIsEnabled = userPreferences.filteringEnabled.first()
-        val existingSnapshot = snapshotStore.read()
-        val existingProfile = existingSnapshot?.profiles
-            ?.firstOrNull { it.id == DEFAULT_PROFILE_ID }
         val nowMillis = Clock.System.now().toEpochMilliseconds()
         val numberRules = dao.getAll()
             .filter { it.enabled }
@@ -85,17 +82,6 @@ class RoomRuleStore(context: Context) : RuleStore {
                 expiresAtMillis == null || expiresAtMillis > nowMillis
             }
         val generatedRules = buildList {
-            if (contactsAreAllowed) {
-                add(
-                    FilterPolicyRule(
-                        id = CONTACT_RULE_ID,
-                        condition = PolicyCondition(PolicyMatchType.CONTACT),
-                        label = "Contacts",
-                        decision = CallDecision.ALLOW,
-                        priority = CONTACT_RULE_PRIORITY,
-                    ),
-                )
-            }
             numberRules.forEach { rule ->
                 add(
                     FilterPolicyRule(
@@ -109,30 +95,26 @@ class RoomRuleStore(context: Context) : RuleStore {
                 )
             }
         }
-        val preservedRules = existingProfile?.rules.orEmpty().filterNot {
-            it.condition.type == PolicyMatchType.CONTACT ||
-                it.condition.type == PolicyMatchType.EXACT_NUMBER
-        }
-        val profile = (existingProfile ?: FilterProfile(id = DEFAULT_PROFILE_ID, name = "Default"))
-            .copy(rules = preservedRules + generatedRules)
-        val profiles = existingSnapshot?.profiles.orEmpty()
-            .filterNot { it.id == DEFAULT_PROFILE_ID }
-            .plus(profile)
-        snapshotStore.write(
+        check(coordinator.update {
+            val existingProfile = it.profiles.firstOrNull { profile -> profile.id == DEFAULT_PROFILE_ID }
+            val preservedRules = existingProfile?.rules.orEmpty().filterNot { rule ->
+                rule.condition.type == PolicyMatchType.EXACT_NUMBER
+            }
+            val profile = (existingProfile ?: FilterProfile(id = DEFAULT_PROFILE_ID, name = "Default"))
+                .copy(rules = preservedRules + generatedRules)
+            val profiles = it.profiles.filterNot { profile -> profile.id == DEFAULT_PROFILE_ID }.plus(profile)
             FilterSnapshot(
-                version = Clock.System.now().toEpochMilliseconds(),
+                version = it.version,
                 profiles = profiles,
                 contactsAllowed = contactsAreAllowed,
-                emergencyNumbersAlwaysAllowed = existingSnapshot?.emergencyNumbersAlwaysAllowed ?: true,
+                emergencyNumbersAlwaysAllowed = it.emergencyNumbersAlwaysAllowed,
                 filteringEnabled = filteringIsEnabled,
-            ),
-        )
+            )
+        }) { "Unable to persist filter rules" }
     }
 
     private companion object {
         const val DEFAULT_PROFILE_ID = 1L
-        const val CONTACT_RULE_ID = -1L
-        const val CONTACT_RULE_PRIORITY = 10
         const val EXPLICIT_NUMBER_PRIORITY = 20
     }
 }

@@ -20,9 +20,7 @@ class CallLogStore(context: Context) {
     fun observeBlockedCountSince(sinceMillis: Long): Flow<Int> =
         dao.observeBlockedCountSince(sinceMillis)
 
-    suspend fun appendIfAbsent(entry: CallLogEntry) {
-        dao.insertIfAbsent(entry.toEntity())
-    }
+    suspend fun appendIfAbsent(entry: CallLogEntry): Boolean = dao.insertIgnore(entry.toEntity()) != -1L
 
     suspend fun clear() {
         dao.clear()
@@ -30,6 +28,7 @@ class CallLogStore(context: Context) {
 }
 
 private fun CallLogEntity.toModel(): CallLogEntry = CallLogEntry(
+    eventId = eventId,
     timestampMillis = timestampMillis,
     number = number,
     result = FilterResult(
@@ -42,6 +41,7 @@ private fun CallLogEntity.toModel(): CallLogEntry = CallLogEntry(
 )
 
 private fun CallLogEntry.toEntity(): CallLogEntity = CallLogEntity(
+    eventId = eventId.ifBlank { "legacy-${timestampMillis}-${number.orEmpty()}" },
     timestampMillis = timestampMillis,
     number = number,
     decision = result.decision.name,

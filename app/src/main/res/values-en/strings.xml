@@ -117,7 +117,7 @@
     <string name="language_english">English</string>
     <string name="settings_description">Change the app language and call filtering options here.</string>
     <string name="app_settings_description">Interface and app settings. Call-processing rules are managed in Policies.</string>
-    <string name="app_version">Version 0.2.0</string>
+    <string name="app_version">Version %1$s</string>
     <string name="legal_information">License and copyright</string>
     <string name="copyright_holder">Copyright</string>
     <string name="copyright_holder_value">© 2026 AlexRust</string>

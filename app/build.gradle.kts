@@ -15,7 +15,10 @@ android {
         versionName = libs.versions.appVersionName.get()
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 dependencies {

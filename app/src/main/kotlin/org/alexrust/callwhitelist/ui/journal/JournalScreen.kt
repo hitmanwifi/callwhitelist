@@ -138,7 +138,10 @@ private fun JournalRow(entry: CallLogEntry) {
             },
             headlineContent = { Text(entry.number ?: stringResource(R.string.hidden_number)) },
             supportingContent = {
-                Text(if (isBlocked) stringResource(R.string.call_blocked) else stringResource(R.string.call_allowed))
+                androidx.compose.foundation.layout.Column {
+                    Text(if (isBlocked) stringResource(R.string.call_blocked) else stringResource(R.string.call_allowed))
+                    Text("${entry.result.source}: ${entry.result.reason}", style = MaterialTheme.typography.bodySmall)
+                }
             },
         )
     }

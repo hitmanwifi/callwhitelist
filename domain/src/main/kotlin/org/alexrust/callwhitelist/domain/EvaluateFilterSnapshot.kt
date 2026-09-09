@@ -45,31 +45,34 @@ class EvaluateFilterSnapshot(
             }
             .maxWithOrNull(compareBy<org.alexrust.callwhitelist.model.FilterProfile> { it.priority }.thenBy { it.id })
 
-        val number = rawNumber?.let { normalize(it) }
-        val matchType = when {
-            rawNumber == null -> PolicyMatchType.HIDDEN_NUMBER
-            number == null -> PolicyMatchType.UNKNOWN_NUMBER
-            isContact -> PolicyMatchType.CONTACT
-            else -> PolicyMatchType.EXACT_NUMBER
+        if (profile == null) {
+            return FilterResult(CallDecision.ALLOW, MatchSource.DEFAULT, "No active profile")
         }
 
-        val matchingRule = profile?.rules
-            ?.asSequence()
-            ?.filter { it.enabled }
-            ?.filter {
-                val timeWindow = it.timeWindow
+        val number = rawNumber?.let { normalize(it) }
+        val activeRules = profile.rules.asSequence()
+            .filter { it.enabled }
+            .filter { rule ->
+                val timeWindow = rule.timeWindow
                 timeWindow == null || isTimeWindowActive(timeWindow, now)
             }
-            ?.filter {
-                val expiresAtMillis = it.expiresAtMillis
+            .filter { rule ->
+                val expiresAtMillis = rule.expiresAtMillis
                 expiresAtMillis == null || nowMillis == null || nowMillis < expiresAtMillis
             }
-            ?.filter { matches(it, matchType, number) }
-            ?.maxWithOrNull(
-                compareBy<FilterPolicyRule> { it.priority }
-                    .thenBy { specificity(it.condition.type) }
-                    .thenBy { it.id },
-            )
+            .toList()
+        val matchingRule = when {
+            number != null -> activeRules.matching(PolicyMatchType.EXACT_NUMBER, number)
+            else -> null
+        } ?: when {
+            isContact && snapshot.contactsAllowed -> null
+            rawNumber == null -> activeRules.matching(PolicyMatchType.HIDDEN_NUMBER, number)
+            else -> activeRules.matching(PolicyMatchType.UNKNOWN_NUMBER, number)
+        }
+
+        if (isContact && snapshot.contactsAllowed && matchingRule == null) {
+            return FilterResult(CallDecision.ALLOW, MatchSource.CONTACT, "Contact")
+        }
 
         if (matchingRule != null) {
             return FilterResult(
@@ -80,11 +83,18 @@ class EvaluateFilterSnapshot(
         }
 
         return FilterResult(
-            decision = profile?.defaultDecision ?: CallDecision.BLOCK,
+            decision = profile.defaultDecision,
             source = MatchSource.DEFAULT,
-            reason = profile?.name ?: "No active profile",
+            reason = profile.name,
         )
     }
+
+    private fun List<FilterPolicyRule>.matching(type: PolicyMatchType, number: String?): FilterPolicyRule? =
+        asSequence().filter { matches(it, type, number) }.maxWithOrNull(
+            compareBy<FilterPolicyRule> { it.priority }
+                .thenBy { specificity(it.condition.type) }
+                .thenBy { it.id },
+        )
 
     private fun matches(
         rule: FilterPolicyRule,

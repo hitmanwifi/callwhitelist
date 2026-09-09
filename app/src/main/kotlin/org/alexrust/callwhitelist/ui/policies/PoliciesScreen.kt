@@ -621,6 +621,9 @@ private fun numberForStorage(value: String, country: PhoneCountry): String =
 
 private fun numberFromSelectedCountry(value: String, country: PhoneCountry): String {
     val digits = value.filter(Char::isDigit)
+    if (country.dialCode == "+7" && digits.length == 11 && digits.startsWith("8")) {
+        return digits.drop(1)
+    }
     return digits.removePrefix(country.dialCode.filter(Char::isDigit))
 }
 

@@ -117,7 +117,7 @@
     <string name="language_english">Английский</string>
     <string name="settings_description">Здесь можно изменить язык приложения и параметры фильтрации вызовов.</string>
     <string name="app_settings_description">Настройки интерфейса и самого приложения. Правила обработки вызовов находятся в разделе «Политики».</string>
-    <string name="app_version">Версия 0.2.0</string>
+    <string name="app_version">Версия %1$s</string>
     <string name="legal_information">Лицензия и авторские права</string>
     <string name="copyright_holder">Авторские права</string>
     <string name="copyright_holder_value">© 2026 AlexRust</string>

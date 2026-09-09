@@ -42,6 +42,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import org.alexrust.callwhitelist.BuildConfig
 import org.alexrust.callwhitelist.R
 import org.alexrust.callwhitelist.model.OverviewPeriod
 import org.alexrust.callwhitelist.model.ThemeMode
@@ -194,7 +195,10 @@ fun SettingsScreen(
                 Text(stringResource(R.string.open_notification_settings))
             }
         }
-        Text(stringResource(R.string.app_version), style = MaterialTheme.typography.bodySmall)
+        Text(
+            stringResource(R.string.app_version, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.bodySmall,
+        )
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(

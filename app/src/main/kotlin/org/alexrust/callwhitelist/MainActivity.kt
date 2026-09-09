@@ -26,4 +26,10 @@ class MainActivity : ComponentActivity() {
             WhiteListApp(openJournal = intent?.action == OPEN_JOURNAL_ACTION)
         }
     }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        setContent { WhiteListApp(openJournal = intent.action == OPEN_JOURNAL_ACTION) }
+    }
 }
